@@ -1,0 +1,51 @@
+{
+	"general": {
+		"game_name": "MozMaze",
+		"command_files": [
+			"ks/commands"
+		],
+		"allowed_teams": {},
+		"offline_mode": true,
+		"": "online configs",
+		"match_id": "0"
+	},
+
+	"net": {
+		"host": "0.0.0.0",
+		"port": 5000,
+		"keyfile": "certs/key.pem",
+		"certfile": "certs/cert.pem"
+	},
+
+	"gui": {
+		"host": "0.0.0.0",
+		"port": 5001,
+		"save_replay": true,
+		"replay_dir": "replays",
+		"replay_filename": null,
+		"width": 960,
+		"height": 960,
+		"images": {
+		}
+	},
+
+	"sides": {
+		"Blue": ["0"],
+		"Red": ["0"]
+	},
+
+	"game_handler": {
+		"": "base game handler configs",
+		"start_waiting_time": 3,
+		"": "realtime game handler configs",
+		"cycle_duration": 0.1,
+		"max_total_commands": 1000,
+		"max_team_commands": 1000,
+		"max_agent_commands": 1000,
+		"": "turnbased game handler configs",
+		"auto_change_turn": true,
+		"auto_change_turn_sequence": ["Blue", "Red"],
+		"": "my configs",
+		"map": "maps/simple.cm"
+	}
+}
