@@ -20,6 +20,7 @@
 	"gui": {
 		"host": "0.0.0.0",
 		"port": 5001,
+		"max_spectators": 3,
 		"save_replay": true,
 		"replay_dir": "replays",
 		"replay_filename": null,
@@ -36,6 +37,7 @@
 
 	"game_handler": {
 		"": "base game handler configs",
+		"start_time": "2017-11-02 00-15",
 		"start_waiting_time": 3,
 		"": "realtime game handler configs",
 		"cycle_duration": 0.1,
