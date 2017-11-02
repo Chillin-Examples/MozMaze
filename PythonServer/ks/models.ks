@@ -2,7 +2,8 @@
 _def = enum<byte>
 	{
 		EMPTY,
-		BLOCK
+		BLOCK,
+		GATE
 	}
 
 
@@ -54,5 +55,4 @@ scores = map<string, int>
 board = list<list<ECell>>
 agents = list<Agent>
 powerups = list<PowerUp>
-gates = list<int>
 exit_score = int
