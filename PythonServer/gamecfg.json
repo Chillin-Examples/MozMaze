@@ -37,7 +37,7 @@
 
 	"game_handler": {
 		"": "base game handler configs",
-		"start_time": "2017-11-02 00-15",
+		"start_time": "2017-11-08 00:50",
 		"start_waiting_time": 3,
 		"": "realtime game handler configs",
 		"cycle_duration": 0.1,
