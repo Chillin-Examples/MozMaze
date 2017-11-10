@@ -1,6 +1,6 @@
 {
 	"general": {
-		"game_name": "MozMaze",
+		"game_name": "XO",
 		"command_files": [
 			"ks/commands"
 		],
@@ -20,34 +20,42 @@
 	"gui": {
 		"host": "0.0.0.0",
 		"port": 5001,
-		"max_spectators": 3,
 		"save_replay": true,
 		"replay_dir": "replays",
 		"replay_filename": null,
-		"width": 960,
-		"height": 960,
+		"width": 512,
+		"height": 512,
 		"images": {
+			"Background": "images/backG.jpg",
+			"Block": "images/block.jpg",
+			"Fire": "images/laser.png",
+			"Agent_team_player1":"images/a1.png",
+			"Agent_team_player2":"images/a2.png",
+			"Gate":"images/gate.png",
+			"Empty":"images/empty.jpg",
+			"laser_powerup":"images/laser_powerup.png",
+			"healpack_powerup":"images/healpack_powerup.png"
 		}
 	},
 
 	"sides": {
-		"Blue": ["0"],
-		"Red": ["0"]
+		"player1": ["0"],
+		"player2": ["0"]
 	},
 
 	"game_handler": {
 		"": "base game handler configs",
-		"start_time": "2017-11-08 00:50",
 		"start_waiting_time": 3,
 		"": "realtime game handler configs",
-		"cycle_duration": 0.1,
-		"max_total_commands": 1000,
-		"max_team_commands": 1000,
-		"max_agent_commands": 1000,
+		"cycle_duration": 1,
+		"max_total_commands": 10,
+		"max_team_commands": 10,
+		"max_agent_commands": 10,
 		"": "turnbased game handler configs",
 		"auto_change_turn": true,
-		"auto_change_turn_sequence": ["Blue", "Red"],
+		"auto_change_turn_sequence": ["player1", "player2"],
 		"": "my configs",
-		"map": "maps/simple.cm"
+		"map": "maps/map.json"
+
 	}
 }

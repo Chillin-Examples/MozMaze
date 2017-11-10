@@ -11,6 +11,7 @@ PY3 = sys.version_info > (3,)
 class ECell(Enum):
 	EMPTY = 0
 	BLOCK = 1
+	GATE = 2
 
 
 class EDir(Enum):
@@ -306,18 +307,17 @@ class World(object):
 		return 'World'
 
 
-	def __init__(self, width=None, height=None, scores=None, board=None, agents=None, powerups=None, gates=None, exit_score=None):
-		self.initialize(width, height, scores, board, agents, powerups, gates, exit_score)
+	def __init__(self, width=None, height=None, scores=None, board=None, agents=None, powerups=None, exit_score=None):
+		self.initialize(width, height, scores, board, agents, powerups, exit_score)
 	
 
-	def initialize(self, width=None, height=None, scores=None, board=None, agents=None, powerups=None, gates=None, exit_score=None):
+	def initialize(self, width=None, height=None, scores=None, board=None, agents=None, powerups=None, exit_score=None):
 		self.width = width
 		self.height = height
 		self.scores = scores
 		self.board = board
 		self.agents = agents
 		self.powerups = powerups
-		self.gates = gates
 		self.exit_score = exit_score
 	
 
@@ -414,21 +414,6 @@ class World(object):
 				if tmp30 is not None:
 					s += tmp30.serialize()
 		
-		# serialize self.gates
-		s += b'\x00' if self.gates is None else b'\x01'
-		if self.gates is not None:
-			tmp31 = b''
-			tmp31 += struct.pack('I', len(self.gates))
-			while len(tmp31) and tmp31[-1] == b'\x00'[0]:
-				tmp31 = tmp31[:-1]
-			s += struct.pack('B', len(tmp31))
-			s += tmp31
-			
-			for tmp32 in self.gates:
-				s += b'\x00' if tmp32 is None else b'\x01'
-				if tmp32 is not None:
-					s += struct.pack('i', tmp32)
-		
 		# serialize self.exit_score
 		s += b'\x00' if self.exit_score is None else b'\x01'
 		if self.exit_score is not None:
@@ -439,177 +424,153 @@ class World(object):
 
 	def deserialize(self, s, offset=0):
 		# deserialize self.width
-		tmp33 = struct.unpack('B', s[offset:offset + 1])[0]
+		tmp31 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
-		if tmp33:
+		if tmp31:
 			self.width = struct.unpack('i', s[offset:offset + 4])[0]
 			offset += 4
 		else:
 			self.width = None
 		
 		# deserialize self.height
-		tmp34 = struct.unpack('B', s[offset:offset + 1])[0]
+		tmp32 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
-		if tmp34:
+		if tmp32:
 			self.height = struct.unpack('i', s[offset:offset + 4])[0]
 			offset += 4
 		else:
 			self.height = None
 		
 		# deserialize self.scores
-		tmp35 = struct.unpack('B', s[offset:offset + 1])[0]
+		tmp33 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
-		if tmp35:
-			tmp36 = struct.unpack('B', s[offset:offset + 1])[0]
+		if tmp33:
+			tmp34 = struct.unpack('B', s[offset:offset + 1])[0]
 			offset += 1
-			tmp37 = s[offset:offset + tmp36]
-			offset += tmp36
-			tmp37 += b'\x00' * (4 - tmp36)
-			tmp38 = struct.unpack('I', tmp37)[0]
+			tmp35 = s[offset:offset + tmp34]
+			offset += tmp34
+			tmp35 += b'\x00' * (4 - tmp34)
+			tmp36 = struct.unpack('I', tmp35)[0]
 			
 			self.scores = {}
-			for tmp39 in range(tmp38):
-				tmp42 = struct.unpack('B', s[offset:offset + 1])[0]
+			for tmp37 in range(tmp36):
+				tmp40 = struct.unpack('B', s[offset:offset + 1])[0]
 				offset += 1
-				if tmp42:
-					tmp43 = struct.unpack('B', s[offset:offset + 1])[0]
+				if tmp40:
+					tmp41 = struct.unpack('B', s[offset:offset + 1])[0]
 					offset += 1
-					tmp44 = s[offset:offset + tmp43]
-					offset += tmp43
-					tmp44 += b'\x00' * (4 - tmp43)
-					tmp45 = struct.unpack('I', tmp44)[0]
+					tmp42 = s[offset:offset + tmp41]
+					offset += tmp41
+					tmp42 += b'\x00' * (4 - tmp41)
+					tmp43 = struct.unpack('I', tmp42)[0]
 					
-					tmp40 = s[offset:offset + tmp45].decode('ISO-8859-1') if PY3 else s[offset:offset + tmp45]
-					offset += tmp45
+					tmp38 = s[offset:offset + tmp43].decode('ISO-8859-1') if PY3 else s[offset:offset + tmp43]
+					offset += tmp43
 				else:
-					tmp40 = None
-				tmp46 = struct.unpack('B', s[offset:offset + 1])[0]
+					tmp38 = None
+				tmp44 = struct.unpack('B', s[offset:offset + 1])[0]
 				offset += 1
-				if tmp46:
-					tmp41 = struct.unpack('i', s[offset:offset + 4])[0]
+				if tmp44:
+					tmp39 = struct.unpack('i', s[offset:offset + 4])[0]
 					offset += 4
 				else:
-					tmp41 = None
-				self.scores[tmp40] = tmp41
+					tmp39 = None
+				self.scores[tmp38] = tmp39
 		else:
 			self.scores = None
 		
 		# deserialize self.board
-		tmp47 = struct.unpack('B', s[offset:offset + 1])[0]
+		tmp45 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
-		if tmp47:
-			tmp48 = struct.unpack('B', s[offset:offset + 1])[0]
+		if tmp45:
+			tmp46 = struct.unpack('B', s[offset:offset + 1])[0]
 			offset += 1
-			tmp49 = s[offset:offset + tmp48]
-			offset += tmp48
-			tmp49 += b'\x00' * (4 - tmp48)
-			tmp50 = struct.unpack('I', tmp49)[0]
+			tmp47 = s[offset:offset + tmp46]
+			offset += tmp46
+			tmp47 += b'\x00' * (4 - tmp46)
+			tmp48 = struct.unpack('I', tmp47)[0]
 			
 			self.board = []
-			for tmp51 in range(tmp50):
-				tmp53 = struct.unpack('B', s[offset:offset + 1])[0]
+			for tmp49 in range(tmp48):
+				tmp51 = struct.unpack('B', s[offset:offset + 1])[0]
 				offset += 1
-				if tmp53:
-					tmp54 = struct.unpack('B', s[offset:offset + 1])[0]
+				if tmp51:
+					tmp52 = struct.unpack('B', s[offset:offset + 1])[0]
 					offset += 1
-					tmp55 = s[offset:offset + tmp54]
-					offset += tmp54
-					tmp55 += b'\x00' * (4 - tmp54)
-					tmp56 = struct.unpack('I', tmp55)[0]
+					tmp53 = s[offset:offset + tmp52]
+					offset += tmp52
+					tmp53 += b'\x00' * (4 - tmp52)
+					tmp54 = struct.unpack('I', tmp53)[0]
 					
-					tmp52 = []
-					for tmp57 in range(tmp56):
-						tmp59 = struct.unpack('B', s[offset:offset + 1])[0]
+					tmp50 = []
+					for tmp55 in range(tmp54):
+						tmp57 = struct.unpack('B', s[offset:offset + 1])[0]
 						offset += 1
-						if tmp59:
-							tmp60 = struct.unpack('b', s[offset:offset + 1])[0]
+						if tmp57:
+							tmp58 = struct.unpack('b', s[offset:offset + 1])[0]
 							offset += 1
-							tmp58 = ECell(tmp60)
+							tmp56 = ECell(tmp58)
 						else:
-							tmp58 = None
-						tmp52.append(tmp58)
+							tmp56 = None
+						tmp50.append(tmp56)
 				else:
-					tmp52 = None
-				self.board.append(tmp52)
+					tmp50 = None
+				self.board.append(tmp50)
 		else:
 			self.board = None
 		
 		# deserialize self.agents
-		tmp61 = struct.unpack('B', s[offset:offset + 1])[0]
+		tmp59 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
-		if tmp61:
-			tmp62 = struct.unpack('B', s[offset:offset + 1])[0]
+		if tmp59:
+			tmp60 = struct.unpack('B', s[offset:offset + 1])[0]
 			offset += 1
-			tmp63 = s[offset:offset + tmp62]
-			offset += tmp62
-			tmp63 += b'\x00' * (4 - tmp62)
-			tmp64 = struct.unpack('I', tmp63)[0]
+			tmp61 = s[offset:offset + tmp60]
+			offset += tmp60
+			tmp61 += b'\x00' * (4 - tmp60)
+			tmp62 = struct.unpack('I', tmp61)[0]
 			
 			self.agents = []
-			for tmp65 in range(tmp64):
-				tmp67 = struct.unpack('B', s[offset:offset + 1])[0]
+			for tmp63 in range(tmp62):
+				tmp65 = struct.unpack('B', s[offset:offset + 1])[0]
 				offset += 1
-				if tmp67:
-					tmp66 = Agent()
-					offset = tmp66.deserialize(s, offset)
+				if tmp65:
+					tmp64 = Agent()
+					offset = tmp64.deserialize(s, offset)
 				else:
-					tmp66 = None
-				self.agents.append(tmp66)
+					tmp64 = None
+				self.agents.append(tmp64)
 		else:
 			self.agents = None
 		
 		# deserialize self.powerups
-		tmp68 = struct.unpack('B', s[offset:offset + 1])[0]
+		tmp66 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
-		if tmp68:
-			tmp69 = struct.unpack('B', s[offset:offset + 1])[0]
+		if tmp66:
+			tmp67 = struct.unpack('B', s[offset:offset + 1])[0]
 			offset += 1
-			tmp70 = s[offset:offset + tmp69]
-			offset += tmp69
-			tmp70 += b'\x00' * (4 - tmp69)
-			tmp71 = struct.unpack('I', tmp70)[0]
+			tmp68 = s[offset:offset + tmp67]
+			offset += tmp67
+			tmp68 += b'\x00' * (4 - tmp67)
+			tmp69 = struct.unpack('I', tmp68)[0]
 			
 			self.powerups = []
-			for tmp72 in range(tmp71):
-				tmp74 = struct.unpack('B', s[offset:offset + 1])[0]
+			for tmp70 in range(tmp69):
+				tmp72 = struct.unpack('B', s[offset:offset + 1])[0]
 				offset += 1
-				if tmp74:
-					tmp73 = PowerUp()
-					offset = tmp73.deserialize(s, offset)
+				if tmp72:
+					tmp71 = PowerUp()
+					offset = tmp71.deserialize(s, offset)
 				else:
-					tmp73 = None
-				self.powerups.append(tmp73)
+					tmp71 = None
+				self.powerups.append(tmp71)
 		else:
 			self.powerups = None
 		
-		# deserialize self.gates
-		tmp75 = struct.unpack('B', s[offset:offset + 1])[0]
-		offset += 1
-		if tmp75:
-			tmp76 = struct.unpack('B', s[offset:offset + 1])[0]
-			offset += 1
-			tmp77 = s[offset:offset + tmp76]
-			offset += tmp76
-			tmp77 += b'\x00' * (4 - tmp76)
-			tmp78 = struct.unpack('I', tmp77)[0]
-			
-			self.gates = []
-			for tmp79 in range(tmp78):
-				tmp81 = struct.unpack('B', s[offset:offset + 1])[0]
-				offset += 1
-				if tmp81:
-					tmp80 = struct.unpack('i', s[offset:offset + 4])[0]
-					offset += 4
-				else:
-					tmp80 = None
-				self.gates.append(tmp80)
-		else:
-			self.gates = None
-		
 		# deserialize self.exit_score
-		tmp82 = struct.unpack('B', s[offset:offset + 1])[0]
+		tmp73 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
-		if tmp82:
+		if tmp73:
 			self.exit_score = struct.unpack('i', s[offset:offset + 4])[0]
 			offset += 4
 		else:
