@@ -31,6 +31,8 @@ class GameHandler(TurnbasedGameHandler):
         self.__deleted_power_ups_img =[]
         self.__deleted_agents_imgs = []
         self.commands = {}
+        self.exited_agents = {self.sides[0]: [], self.sides[1]: []}
+        self.killed_agents = {self.sides[0]: [], self.sides[1]: []}
         self.world.agents = []
         map_file = open((self.config['map']), "r").read()
         map_json = json.loads(map_file)
@@ -125,18 +127,20 @@ class GameHandler(TurnbasedGameHandler):
                 self._shoot(self.world.agents[command.id])
 
             if  command.name() == Move.name():
-                self.world.agents[command.id] = self._move(self.world.agents[command.id])
-
-                has_powerup = self._has_power_up(self.world.agents[command.id].position)
-                if has_powerup != False:
-                    if self._has_power_up(self.world.agents[command.id].position) == PowerUpType.HEAL_PACK:
-                        print "healpack"
-                        if self.world.agents[command.id].health + 1 !=self.world.agents[command.id].max_health:
-                            self.world.agents[command.id].health +=1
-                    if self._has_power_up(self.world.agents[command.id].position) == PowerUpType.LASER:
-                        print "laser"
-                        if self.world.agents[command.id].laser_count + 1 != self.world.agents[command.id].laser_max_count:
-                            self.world.agents[command.id].laser_count += 1
+                if self.world.agents[command.id] in self.world.agents:
+                    print "yesss"
+                    self.world.agents[command.id] = self._move(self.world.agents[command.id])
+                if self.world.agents[command.id] in self.world.agents:
+                    has_powerup = self._has_power_up(self.world.agents[command.id].position)
+                    if has_powerup != False:
+                        if self._has_power_up(self.world.agents[command.id].position) == PowerUpType.HEAL_PACK:
+                            print "healpack"
+                            if self.world.agents[command.id].health + 1 !=self.world.agents[command.id].max_health:
+                                self.world.agents[command.id].health +=1
+                        if self._has_power_up(self.world.agents[command.id].position) == PowerUpType.LASER:
+                            print "laser"
+                            if self.world.agents[command.id].laser_count + 1 != self.world.agents[command.id].laser_max_count:
+                                self.world.agents[command.id].laser_count += 1
 
             if command.name() == Turn.name():
                 self.world.agents[command.id] = self._turn(self.world.agents[command.id],command.clockwise)
@@ -178,11 +182,11 @@ class GameHandler(TurnbasedGameHandler):
 
         for side_name, command in self.myCommands:
             if command.name() == Move.name():
-
-                #apply move
-                pos = self._position_to_xy(self.world.agents[command.id].position)
-                self.canvas.edit_image(ref=self.img[command.id], x=pos[0]*self.cell_size + self.cell_size /2,
-                                       y=pos[1]*self.cell_size +self.cell_size /2)
+                if  self.world.agents[command.id] in self.world.agents:
+                    #apply move
+                    pos = self._position_to_xy(self.world.agents[command.id].position)
+                    self.canvas.edit_image(ref=self.img[command.id], x=pos[0]*self.cell_size + self.cell_size /2,
+                                           y=pos[1]*self.cell_size +self.cell_size /2)
 
             if command.name() == Turn.name():
 
@@ -228,8 +232,14 @@ class GameHandler(TurnbasedGameHandler):
             self.powerup_imgs.append(self.canvas.create_image(power_up_dict[self.world.powerups[i].type].__str__()+"_powerup",x=pos[0] * self.cell_size + self.cell_size /2,y=pos[1] * self.cell_size +  self.cell_size /2 ,center_origin=True))
             self.canvas.edit_image(self.powerup_imgs[i],scale_type=ScaleType.ScaleX, scale_value=self.cell_size * self.img_coefficent )
             self.canvas.edit_image(self.powerup_imgs[i], scale_type=ScaleType.ScaleY, scale_value=self.cell_size * self.img_coefficent )
-
-
+        #delete agents images
+        for side in self.sides:
+            for agent in self.exited_agents[side]:
+                if self.img[self.world.agents.index(agent)] in  self.img:
+                    self.canvas.delete_element()
+            for agent in self.killed_agents[side]:
+                if self.img[self.world.agents.index(agent)] in  self.img:
+                    self.canvas.delete_element()
         self.commands = {}
         self.canvas.apply_actions()
 
@@ -277,7 +287,6 @@ class GameHandler(TurnbasedGameHandler):
         y = pos[1]
         if self.world.board[y][x] == ECell.GATE:
             agent = self._exit_from_gate(agent)
-
         else:
             if agent.direction == EDir.RIGHT and x < len(self.world.board[0])- 1:
                 if self.world.board[y][x + 1] != ECell.BLOCK:
@@ -434,11 +443,17 @@ class GameHandler(TurnbasedGameHandler):
     def _kill(self,agent):
 
         if self.world.agents[self.world.agents.index(agent)].health == 0:
-            self.world.agents.pop(self.world.agents.index(agent))
+            self.killed_agents[agent.side_name].append(agent)
+            self._delete_agent(agent)
 
         else:
             self.world.agents[self.world.agents.index(agent)].health -= 1
 
+
+
+    def _delete_agent(self,agent):
+
+        self.world.agents.pop(self.world.agents.index(agent))
 
 
     def _exit_from_gate(self,agent):
@@ -447,19 +462,25 @@ class GameHandler(TurnbasedGameHandler):
         if agent.direction == EDir.RIGHT:
             if pos[0] == len(self.world.board[0]):
                 self.world.scores[agent.side_name] += self.world.exit_score
-                #agent.position += 1
+                self.exited_agents[agent.side_name].append(agent)
+                self._delete_agent(agent)
         elif agent.direction == EDir.LEFT:
             if pos[0] == 0:
                 self.world.scores[agent.side_name] += self.world.exit_score
-                #agent.position -= 1
+                self.exited_agents[agent.side_name].append(agent)
+                print "exited agent" + self.exited_agents.__str__()
+                self._delete_agent(agent)
         elif agent.direction == EDir.UP:
             if pos[1] == 0:
                 self.world.scores[agent.side_name] += self.world.exit_score
-                #agent.position -= len(self.world.board[0])
+                self.exited_agents[agent.side_name].append(agent)
+                self._delete_agent(agent)
         else:
             if pos[1] == len(self.world.board[0]):
                 self.world.scores[agent.side_name] += self.world.exit_score
-                #agent.position += len(self.world.board[0])
+                self.exited_agents[agent.side_name].append(agent)
+                print "exited agent" + self.exited_agents.__str__()
+                self._delete_agent(agent)
         return agent
 
 
@@ -468,14 +489,13 @@ class GameHandler(TurnbasedGameHandler):
         s0 = self.sides[0]
         s1 = self.sides[1]
         if self.current_cycle >= self.cycle_limitation:
-            if self.world.scores[s1] > self.world.scores[s0]:
+            self.end_game(max(self.world.scores[s0],self.world.scores[s1]))
+        else:
+            if len(self.killed_agents[s0]) == len(self.agents_dir_row) / 2 or len(self.exited_agents[s1]) == len(self.agents_dir_row) / 2:
                 self.end_game(s1)
-            elif self.world.scores[s1] < self.world.scores[s0]:
+
+            elif len(self.killed_agents[s1]) == len(self.agents_dir_row) / 2 or len(self.exited_agents[s0]) == len(self.agents_dir_row) / 2:
                 self.end_game(s0)
-        elif self._chk_agent_end() == s0:
-            self.end_game(s1)
-        elif self._chk_agent_end() == s1:
-            self.end_game(s0)
 
 
     def _change_blocks(self):
