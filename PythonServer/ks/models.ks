@@ -1,49 +1,51 @@
 [ECell]
 _def = enum<byte>
-	{
-		EMPTY,
-		BLOCK,
-		GATE
-	}
+  {
+    Empty,
+    Box,
+    Tree,
+    PowerUpEmitter
+  }
 
 
-[EDir]
+[EPowerUpType]
 _def = enum<byte>
-	{
-		UP,
-		RIGHT,
-		DOWN,
-		LEFT
-	}
+  {
+    Ammo,
+    Heal
+  }
 
 
-[PowerUpType]
+[EBananaStatus]
 _def = enum<byte>
-	{
-		LASER,
-		HEAL_PACK
-	}
+  {
+    Alive,
+    InBox,
+    Dead
+  }
 
 
 [PowerUp]
 _def = class
-type = PowerUpType
+type = EPowerUpType
 position = int
 apearance_time = int
 value = int
 
 
-[Agent]
+[Banana]
 _def = class
 id = int
-side_name = string
-direction = EDir
+status = EBananaStatus
 position = int
 health = int
 max_health = int
 laser_count = int
+max_laser_count = int
 laser_range = int
-laser_max_count = int
+laser_damage = int
+curr_reload = int
+reload_time = int
 death_score = int
 
 
@@ -53,6 +55,6 @@ width = int
 height = int
 scores = map<string, int>
 board = list<list<ECell>>
-agents = list<Agent>
+bananas = map<string, list<Banana>>
 powerups = list<PowerUp>
-exit_score = int
+enter_score = int

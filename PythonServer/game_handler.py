@@ -1,524 +1,480 @@
 # -*- coding: utf-8 -*-
 
 # python imports
+from __future__ import division
 import random
-from  time import time
 import json
-# chillin imports
+import math
 
+# chillin imports
 from chillin_server import TurnbasedGameHandler
-from chillin_server.gui.canvas_elements import ScaleType,Color
+from chillin_server.gui.canvas_elements import ScaleType
 
 # project imports
-from ks.models import World,ECell,EDir,Agent,PowerUp,PowerUpType
-from ks.commands import Move, Turn, Fire
+from ks.models import World, Banana, PowerUp, ECell, EBananaStatus, EPowerUpType
+from ks.commands import Move, Enter, Fire, EFireDir, EMoveDir
+
+
+# GLOBALS
+BOARD_WIDTH = 0
+BOARD_HEIGHT = 0
 
 
 class GameHandler(TurnbasedGameHandler):
 
-    def on_recv_command(self, side_name, agent_name, command_type, command):
-        print('command: %s %s' % (side_name, command_type ))
-        # command can be fire , turn or move
-        self.commands[(side_name,command.id)] = ((side_name, command),time())
-
-
-    def on_initialize(self):
-        print('initialize')
-        self.sides = self.sides.keys()
-        self.world = World()
-        self.world.powerups = []
-        self.img = []
-        self.__deleted_power_ups_img =[]
-        self.__deleted_agents_imgs = []
-        self.commands = {}
-        self.exited_agents = {self.sides[0]: [], self.sides[1]: []}
-        self.killed_agents = {self.sides[0]: [], self.sides[1]: []}
-        self.world.agents = []
-        map_file = open((self.config['map']), "r").read()
-        map_json = json.loads(map_file)
-        map_rows = map_json['map']
-        self.powerup_appearence_time = map_json['apearance_time']
-        self.cycle_limitation = map_json['game_cycles_num']
-        self.agents_dir_row = map_json['dirs']
-        self.world.scores = {self.sides[0]: 0, self.sides[1]: 0}
-        self.world.exit_score = json.loads(map_file)['exit_score']
-        self.commands = {}
-
-        self.world.board = [[ECell.EMPTY for _ in range(len(map_rows))] for _ in range(len(map_rows))]
-        self.cell_size = self.canvas.height / len(self.world.board[0])
-        counter = 0
-        agent_count = 0
-        dirs = {
-            'u': EDir.UP,
-            'd': EDir.DOWN,
-            'r': EDir.RIGHT,
-            'l': EDir.LEFT
-        }
-        for y, row in enumerate(map_rows):
-            for x, col in enumerate(row):
-                if col == "g":
-                    self.world.board[y][x] = ECell.GATE
-                elif col == "b":
-                    self.world.board[y][x] = ECell.BLOCK
-
-                elif col == "2" or col == "1":
-                    a = Agent()
-                    self.world.agents.append(a)
-                    self.world.agents[agent_count].position = counter
-                    if col == "1":
-                        self.world.agents[agent_count].side_name = self.sides[1]
-                    else:
-                        self.world.agents[agent_count].side_name = self.sides[0]
-                    self.world.agents[agent_count].id = agent_count
-                    self.world.agents[agent_count].laser_count = map_json['laser_count']
-                    self.world.agents[agent_count].laser_range = map_json['laser_range']
-                    self.world.agents[agent_count].health = map_json['health']
-                    self.world.agents[agent_count].max_health = map_json['health']
-                    self.world.agents[agent_count].laser_max_count = map_json['laser_max_count']
-                    self.world.agents[agent_count].death_score = map_json['death_score']
-                    self.world.agents[agent_count].direction = dirs[self.agents_dir_row[agent_count]]
-                    agent_count  +=1
-                counter += 1
-        print "laser range" + self.world.agents[1].laser_count.__str__()
-
-    def on_initialize_gui(self):
-        print('initialize gui')
-        self.img_coefficent = 0.2
-        self.canvas.resize_canvas(self.canvas.width,self.canvas.height)
-        background_ref = self.canvas.create_image('Background', 0, 0)
-        self.canvas.edit_image(background_ref, scale_type=ScaleType.ScaleX, scale_value=self.canvas.width)
-        self.canvas.edit_image(background_ref, scale_type=ScaleType.ScaleY, scale_value=self.canvas.height)
-        cell_imgs_dict = {
-            ECell.BLOCK:'Block',
-            ECell.GATE:'Gate',
-            ECell.EMPTY:'Empty'
-        }
-        self.cell_imgs= [[None for _ in range(len(self.world.board[0]))] for _ in range(len(self.world.board[0]))]
-        for y in range(len(self.world.board[0])):
-            for x in range(len(self.world.board[0])):
-                self.cell_imgs[y][x] = self.canvas.create_image(cell_imgs_dict[self.world.board[y][x]], x=x * self.cell_size +  self.cell_size /2 ,  y=y * self.cell_size  +  self.cell_size / 2,center_origin=True)
-                self.canvas.edit_image(self.cell_imgs[y][x], scale_type=ScaleType.ScaleY, scale_value=self.cell_size * self.img_coefficent )
-                self.canvas.edit_image(self.cell_imgs[y][x], scale_type=ScaleType.ScaleX, scale_value=self.cell_size * self.img_coefficent )
-
-        for i in range(len(self.world.agents)):
-            self.img.append(self.canvas.create_image('Agent_team_'+ self.world.agents[i].side_name.__str__(),
-                                                     x=self.cell_size*self._position_to_xy(self.world.agents[i].position)[0] + self.cell_size/ 2,
-                                                     y=self.cell_size*self._position_to_xy(self.world.agents[i].position)[1] + self.cell_size/ 2,
-                                                     angle=self._convert_to_angle(self.world.agents[i].direction), center_origin=True))
-            self.canvas.edit_image(self.img[i], scale_type=ScaleType.ScaleY, scale_value=self.cell_size * self.img_coefficent ,
-                                   angle=self._convert_to_angle(self.world.agents[i].direction), center_origin=True)
-            self.canvas.edit_image(self.img[i], scale_type=ScaleType.ScaleX, scale_value=self.cell_size * self.img_coefficent ,
-                               angle=self._convert_to_angle(self.world.agents[i].direction), center_origin=True)
-
-
-        self.canvas.apply_actions()
-
-
-    def on_process_cycle(self):
-        print('process: %s ----------------' % self.current_cycle)
-
-        #generate power ups
-        self._generate_power_up()
-
-        self.myCommands = [c[0] for  c in sorted(self.commands.values(),key=lambda x: x[1])]
-
-        for side_name, command in self.myCommands:
-            if command.name() == Fire.name():
-                self._shoot(self.world.agents[command.id])
-
-            if  command.name() == Move.name():
-                if self.world.agents[command.id] in self.world.agents:
-                    print "yesss"
-                    self.world.agents[command.id] = self._move(self.world.agents[command.id])
-                if self.world.agents[command.id] in self.world.agents:
-                    has_powerup = self._has_power_up(self.world.agents[command.id].position)
-                    if has_powerup != False:
-                        if self._has_power_up(self.world.agents[command.id].position) == PowerUpType.HEAL_PACK:
-                            print "healpack"
-                            if self.world.agents[command.id].health + 1 !=self.world.agents[command.id].max_health:
-                                self.world.agents[command.id].health +=1
-                        if self._has_power_up(self.world.agents[command.id].position) == PowerUpType.LASER:
-                            print "laser"
-                            if self.world.agents[command.id].laser_count + 1 != self.world.agents[command.id].laser_max_count:
-                                self.world.agents[command.id].laser_count += 1
-
-            if command.name() == Turn.name():
-                self.world.agents[command.id] = self._turn(self.world.agents[command.id],command.clockwise)
-
-            self._power_up_life()
-            print "agent life" + command.id.__str__() + " : "+self.world.agents[command.id].health.__str__()
-            print "agent laser count" + command.id.__str__() + " : " + self.world.agents[command.id].laser_count.__str__()
-            self.changed_blocks =  self._change_blocks()
-            #end of game
-        #self._end()
-
-
-
-
-    def on_update_clients(self):
-        print('update clients')
-        self.send_snapshot(self.world)
-
-
-    def on_update_gui(self):
-        power_up_dict = {
-            PowerUpType.HEAL_PACK: "laser",
-            PowerUpType.LASER: "healpack"
-
-        }
-        print('update gui')
-
-        self.powerup_imgs = []
-
-        # apply block changes
-        """
-         self.canvas.edit_image(self.cell_imgs[self.changed_blocks[2]][self.changed_blocks[3]], x = self.changed_blocks[0]*self.img_coefficent + self.img_coefficent / 2,
-                               y=self.changed_blocks[1] * self.img_coefficent + self.img_coefficent / 2 )
-        self.canvas.edit_image(self.cell_imgs[self.changed_blocks[0]][self.changed_blocks[1]],
-                               x=self.changed_blocks[2] * self.img_coefficent + self.img_coefficent / 2,
-                               y=self.changed_blocks[3] * self.img_coefficent + self.img_coefficent / 2)
-
-        """
-
-        for side_name, command in self.myCommands:
-            if command.name() == Move.name():
-                if  self.world.agents[command.id] in self.world.agents:
-                    #apply move
-                    pos = self._position_to_xy(self.world.agents[command.id].position)
-                    self.canvas.edit_image(ref=self.img[command.id], x=pos[0]*self.cell_size + self.cell_size /2,
-                                           y=pos[1]*self.cell_size +self.cell_size /2)
-
-            if command.name() == Turn.name():
-
-                #apply turn
-                angle = self._convert_to_angle(self.world.agents[command.id].direction)
-                self.canvas.edit_image(ref=self.img[command.id],angle=angle)
-
-            if command.name() == Fire.name():
-
-                #apply  fire
-                dir = self.world.agents[command.id].direction
-                laser = self.canvas.create_image("Fire", x=self._position_to_xy(self.world.agents[command.id].position)[0]*self.cell_size,
-                                        y=self._position_to_xy(self.world.agents[command.id].position)[1]*self.cell_size ,center_origin=False)
-                if dir == EDir.RIGHT:
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleX,
-                                          scale_value=self.cell_size*self.img_coefficent * self.world.agents[command.id].laser_range )
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleY,
-                                          scale_value=self.cell_size * self.img_coefficent )
-                if dir == EDir.LEFT:
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleX,
-                                          scale_value=self.cell_size * self.img_coefficent * self.world.agents[
-                                              command.id].laser_range ,angle=180)
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleY,
-                                          scale_value=self.cell_size * self.img_coefficent )
-
-                if dir == EDir.UP:
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleX,
-                                          scale_value=self.cell_size * self.img_coefficent , angle=270)
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleY,
-                                          scale_value=self.cell_size * self.img_coefficent * self.world.agents[command.id].laser_range , angle=270)
-
-                if dir == EDir.DOWN:
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleX,
-                                          scale_value=self.cell_size * self.img_coefficent ,angle=90)
-                    self.canvas.edit_image(laser, scale_type=ScaleType.ScaleY,
-                                          scale_value=self.cell_size * self.img_coefficent * self.world.agents[
-                                              command.id].laser_range , angle=90)
-                self.canvas.apply_actions()
-                self.canvas.delete_element(laser)
-             #draw power ups
-        for i in  range(len(self.world.powerups)):
-            pos = self._position_to_xy(self.world.powerups[i].position)
-            self.powerup_imgs.append(self.canvas.create_image(power_up_dict[self.world.powerups[i].type].__str__()+"_powerup",x=pos[0] * self.cell_size + self.cell_size /2,y=pos[1] * self.cell_size +  self.cell_size /2 ,center_origin=True))
-            self.canvas.edit_image(self.powerup_imgs[i],scale_type=ScaleType.ScaleX, scale_value=self.cell_size * self.img_coefficent )
-            self.canvas.edit_image(self.powerup_imgs[i], scale_type=ScaleType.ScaleY, scale_value=self.cell_size * self.img_coefficent )
-        #delete agents images
-        for side in self.sides:
-            for agent in self.exited_agents[side]:
-                if self.img[self.world.agents.index(agent)] in  self.img:
-                    self.canvas.delete_element()
-            for agent in self.killed_agents[side]:
-                if self.img[self.world.agents.index(agent)] in  self.img:
-                    self.canvas.delete_element()
-        self.commands = {}
-        self.canvas.apply_actions()
-
-
-    def _convert_to_direction(self, angle):
-
-        dirs = {
-            0: EDir.DOWN,
-            1: EDir.LEFT,
-            2: EDir.UP,
-            3: EDir.RIGHT
-
-        }
-        return dirs[angle/90]
-
-
-    def _convert_to_angle(self, direction):
-        dirs = {
-            EDir.DOWN: 0,
-            EDir.LEFT: 90,
-            EDir.UP: 180,
-            EDir.RIGHT: 270
-
-        }
-        return dirs[direction]
-
-
-    def _position_to_xy(self, position):
-
-        x = position % len(self.world.board[0])
-        y = position / len(self.world.board[0])
-        # its square
-        return [x, y]
-
-
-    def _xy_to_position(self, x, y):
-
-        return (len(self.world.board[0]) * y )+ x
-
-
-    def _move(self, agent):
-
-        pos = self._position_to_xy(agent.position)
-        x = pos[0]
-        y = pos[1]
-        if self.world.board[y][x] == ECell.GATE:
-            agent = self._exit_from_gate(agent)
-        else:
-            if agent.direction == EDir.RIGHT and x < len(self.world.board[0])- 1:
-                if self.world.board[y][x + 1] != ECell.BLOCK:
-                    if self._has_agent(agent.position+1) == False:
-                        agent.position += 1
-
-            elif agent.direction == EDir.LEFT and x >0:
-                if self.world.board[y][x - 1] != ECell.BLOCK:
-                    if self._has_agent(agent.position - 1) == False:
-                        agent.position -= 1
-
-            elif agent.direction == EDir.UP and y >0 :
-                if self.world.board[y - 1][x] != ECell.BLOCK:
-                    if self._has_agent(agent.position - len(self.world.board[0])) == False:
-                        agent.position -= len(self.world.board[0])
-
-            elif agent.direction == EDir.DOWN and y < len(self.world.board[0])-1:
-                if self.world.board[y + 1][x] != ECell.BLOCK:
-                    if self._has_agent(agent.position + len(self.world.board[0])) == False:
-                        agent.position += len(self.world.board[0])
-
-        return agent
-
-
-    def _turn(self,agent,clockwise):
-        dirs = {
-            EDir.DOWN: 0,
-            EDir.LEFT: 1,
-            EDir.UP: 2,
-            EDir.RIGHT: 3
-
-        }
-        if clockwise:
-            agent.direction = self._convert_to_direction((dirs[agent.direction] * 90 + 90) % 360)
-        else:
-            agent.direction = self._convert_to_direction((dirs[agent.direction] * 90 - 90) % 360)
-
-        return agent
-
-    def _generate_power_up(self):
-        
-        type ={
-            0: PowerUpType.LASER,
-            1: PowerUpType.HEAL_PACK
-        }
-
-        powerUp_num_rand = self._rand(len(self.world.agents))
-        for i in range(powerUp_num_rand):
-            while True:
-                x_rnd = self._rand(len(self.world.board[0]) - 1)
-                y_rnd = self._rand(len(self.world.board[0]) - 1)
-                if self.world.board[y_rnd][x_rnd] == ECell.EMPTY:
-                    if self._has_agent(self._xy_to_position(x_rnd, y_rnd)) == False:
-                        if self._has_power_up(self._xy_to_position(x_rnd, y_rnd)) == False:
-                            break
-
-            power_up = PowerUp()
-            power_up.type = type[self._rand(1)]
-            power_up.position = self._xy_to_position(x_rnd,y_rnd)
-            power_up.apearance_time = self.powerup_appearence_time
-            self.world.powerups.append(power_up)
-
-    def _rand(self, n):
-        random.seed(time())
-        return random.randint(0, n)
-
-
-    def _power_up_life(self):
-        for powerup in self.world.powerups:
-            powerup.apearance_time -=1
-            if powerup.apearance_time == 0:
-                self.__deleted_power_ups_img.append(self.powerup_imgs[self.world.powerups.index(powerup)])
-                print ("deleted power up  = " + powerup.position.__str__())
-                self.world.powerups.pop(self.world.powerups.index(powerup))
-
-
-
-    def _has_power_up(self,position):
-
-        for i in range(len(self.world.powerups)):
-            if self.world.powerups[i].position == position:
-                return self.world.powerups[i].type
-        return False
-
-
-    def _has_agent(self,position):
-
-        for i in range(len(self.world.agents)):
-            if position == self.world.agents[i].position:
-                return [True,self.world.agents[i]]
-        return False
-
-
-    def _shoot(self,agent):
-
-
-        if agent.direction == EDir.RIGHT:
-            for x in range(agent.laser_range):
-                if (agent.position + x+1) % len(self.world.board[0]) >= len(self.world.board[0])-1:
-                    break
-                if self._has_agent(agent.position+x+1) != False:
-                    if agent.side_name !=self._has_agent(agent.position+x+1)[1].side_name:
-                        self._kill(self._has_agent(agent.position+x+1)[1])
-                        self.world.scores[agent.side_name] += agent.death_score
-                        break
-        elif agent.direction == EDir.LEFT:
-            for x in range(agent.laser_range):
-                if agent.position - (x+1) % len(self.world.board[0]) <= 0:
-                    break
-                if self._has_agent(agent.position-(x+1)) != False:
-                    if agent.side_name !=  self._has_agent(agent.position-(x+1))[1].side_name:
-                        self._kill(self._has_agent(agent.position-(x+1))[1])
-                        self.world.scores[agent.side_name] += agent.death_score
-                        break
-        elif agent.direction == EDir.UP:
-            for y in range(agent.laser_range):
-                if agent.position-(y+1)*len(self.world.board[0]) <= 0:
-                    break
-                if self._has_agent(agent.position-(y + 1) * len(self.world.board[0])) != False :
-                    if agent.side_name !=  self._has_agent(agent.position - (y + 1) * len(self.world.board[0]))[1].side_name:
-                        self._kill(self._has_agent(agent.position - (y + 1) * len(self.world.board[0]))[1])
-                        self.world.scores[agent.side_name] += agent.death_score
-                        break
-
-        elif agent.direction == EDir.DOWN:
-
-            for y in range(agent.laser_range):
-                if agent.position + (y+1) * len(self.world.board[0]) >= len(self.world.board[0]) * len(self.world.board[0]) :
-                    break
-                if self._has_agent(agent.position + (y + 1) * len(self.world.board[0])) != False:
-                    if agent.side_name !=  self._has_agent(agent.position + (y + 1) * len(self.world.board[0]))[1].side_name:
-                        self._kill(self._has_agent(agent.position + (y + 1) * len(self.world.board[0]))[1])
-                        self.world.scores[agent.side_name] += agent.death_score
-                        break
-
-
-    def _chk_agent_end(self):
-
-       first_side = 0
-       second_side = 0
-       for i in  range(len(self.world.agents)):
-           if self.world.agents[i].side_name == self.sides[0]:
-               first_side += 1
-           else:
-               second_side += 1
-       if first_side == 0:
-           return self.sides[0]
-       elif second_side == 0:
-           return self.sides[1]
-       else:
-           return False
-
-
-    def _kill(self,agent):
-
-        if self.world.agents[self.world.agents.index(agent)].health == 0:
-            self.killed_agents[agent.side_name].append(agent)
-            self._delete_agent(agent)
-
-        else:
-            self.world.agents[self.world.agents.index(agent)].health -= 1
-
-
-
-    def _delete_agent(self,agent):
-
-        self.world.agents.pop(self.world.agents.index(agent))
-
-
-    def _exit_from_gate(self,agent):
-
-        pos = self._position_to_xy(agent.position)
-        if agent.direction == EDir.RIGHT:
-            if pos[0] == len(self.world.board[0]):
-                self.world.scores[agent.side_name] += self.world.exit_score
-                self.exited_agents[agent.side_name].append(agent)
-                self._delete_agent(agent)
-        elif agent.direction == EDir.LEFT:
-            if pos[0] == 0:
-                self.world.scores[agent.side_name] += self.world.exit_score
-                self.exited_agents[agent.side_name].append(agent)
-                print "exited agent" + self.exited_agents.__str__()
-                self._delete_agent(agent)
-        elif agent.direction == EDir.UP:
-            if pos[1] == 0:
-                self.world.scores[agent.side_name] += self.world.exit_score
-                self.exited_agents[agent.side_name].append(agent)
-                self._delete_agent(agent)
-        else:
-            if pos[1] == len(self.world.board[0]):
-                self.world.scores[agent.side_name] += self.world.exit_score
-                self.exited_agents[agent.side_name].append(agent)
-                print "exited agent" + self.exited_agents.__str__()
-                self._delete_agent(agent)
-        return agent
-
-
-    def _end(self):
-
-        s0 = self.sides[0]
-        s1 = self.sides[1]
-        if self.current_cycle >= self.cycle_limitation:
-            self.end_game(max(self.world.scores[s0],self.world.scores[s1]))
-        else:
-            if len(self.killed_agents[s0]) == len(self.agents_dir_row) / 2 or len(self.exited_agents[s1]) == len(self.agents_dir_row) / 2:
-                self.end_game(s1)
-
-            elif len(self.killed_agents[s1]) == len(self.agents_dir_row) / 2 or len(self.exited_agents[s0]) == len(self.agents_dir_row) / 2:
-                self.end_game(s0)
-
-
-    def _change_blocks(self):
-
-        while True:
-            x_rnd_s =self._rand(len(self.world.board[0]) - 1)
-            y_rnd_s = self._rand(len(self.world.board[0]) - 1)
-            if self.world.board[y_rnd_s][x_rnd_s] == ECell.BLOCK:
+  def on_recv_command(self, side_name, agent_name, command_type, command):
+    if None in command.__dict__.values():
+        print('None in command: %s(%i) %s' % (side_name, command.id, command_type))
+        return
+
+    print('command: %s(%i) %s' % (side_name, command.id, command_type))
+    if command.id not in self.commands[side_name]:
+      self.commands[side_name][command.id] = command
+
+
+  def on_initialize(self):
+    print('initialize')
+
+    # Read map file
+    self.map_config = json.loads(open((self.config['map']), "r").read())
+    board = self.map_config['board']
+
+    # fill GLOBALS
+    global BOARD_WIDTH, BOARD_HEIGHT
+    BOARD_WIDTH = len(board[0])
+    BOARD_HEIGHT = len(board)
+
+    # Initialize World
+    self.world = World()
+    self.world.width = BOARD_WIDTH
+    self.world.height = BOARD_HEIGHT
+    self.world.scores = {side: 0 for side in self.sides}
+    self.world.board = [[ECell.Empty for _ in range(self.world.width)] for _ in range(self.world.height)]
+    self.world.bananas = {side: [] for side in self.sides}
+    self.world.powerups = []
+    self.world.enter_score = self.map_config['enter_score']
+    self.powerup_emmiters = [] # powerup emitters position
+    # Create World board
+    for y in range(self.world.height):
+      for x in range(self.world.width):
+        if board[y][x] == 't': # Tree
+          self.world.board[y][x] = ECell.Tree
+        elif board[y][x] == 'b': # Box
+          self.world.board[y][x] = ECell.Box
+        elif board[y][x] == 'p': # PowerUp Emitter
+          self.world.board[y][x] = ECell.PowerUpEmitter
+          self.powerup_emmiters.append(Pos(x=x, y=y).position)
+    # Create Bananas
+    for side in self.sides:
+      for banana in self.map_config['bananas'][side]:
+        new_banana = Banana()
+        new_banana.id = len(self.world.bananas[side])
+        new_banana.status = EBananaStatus.Alive
+        new_banana.position = banana['position']
+        new_banana.health = self.map_config['init_health']
+        new_banana.max_health = self.map_config['init_health']
+        new_banana.laser_count = self.map_config['init_laser_count']
+        new_banana.max_laser_count = self.map_config['init_laser_count']
+        new_banana.laser_range = self.map_config['init_laser_range']
+        new_banana.laser_damage = self.map_config['init_laser_damage']
+        new_banana.curr_reload = 0
+        new_banana.reload_time = self.map_config['init_reload_time']
+        new_banana.death_score = self.map_config['death_score']
+
+        self.world.bananas[side].append(new_banana)
+
+    # Variables
+    self.commands = {side: {} for side in self.sides}
+    self.lasers_ref = []
+
+    self.scale_factor = self.canvas.width / (self.world.width * self.config['cell_size'])
+    self.scale_percent = math.floor(self.scale_factor * 100)
+    self.cell_size = math.floor(self.config['cell_size'] * self.scale_factor)
+
+    self.fire_dirs = {
+      EFireDir.Up.name:        Pos(x=0, y=-1),
+      EFireDir.UpRight.name:   Pos(x=1, y=-1),
+      EFireDir.Right.name:     Pos(x=1, y=0),
+      EFireDir.RightDown.name: Pos(x=1, y=1),
+      EFireDir.Down.name:      Pos(x=0, y=1),
+      EFireDir.DownLeft.name:  Pos(x=-1, y=1),
+      EFireDir.Left.name:      Pos(x=-1, y=0),
+      EFireDir.LeftUp.name:    Pos(x=-1, y=-1)
+    }
+    self.fire_angle = {
+      EFireDir.Up.name:        90,
+      EFireDir.UpRight.name:   45,
+      EFireDir.Right.name:     0,
+      EFireDir.RightDown.name: -45,
+      EFireDir.Down.name:      -90,
+      EFireDir.DownLeft.name:  -135,
+      EFireDir.Left.name:      180,
+      EFireDir.LeftUp.name:    135
+    }
+
+    self.move_dirs = {
+      EMoveDir.Up.name:        Pos(x=0, y=-1),
+      EMoveDir.Right.name:     Pos(x=1, y=0),
+      EMoveDir.Down.name:      Pos(x=0, y=1),
+      EMoveDir.Left.name:      Pos(x=-1, y=0)
+    }
+    self.move_angle = {
+      EMoveDir.Up.name:        90,
+      EMoveDir.Right.name:     0,
+      EMoveDir.Down.name:      -90,
+      EMoveDir.Left.name:      180
+    }
+
+
+  def on_initialize_gui(self):
+    print('initialize gui')
+
+    # Draw background
+    background_ref = self.canvas.create_image('Background', 0, 0)
+    self.canvas.edit_image(background_ref, scale_type=ScaleType.ScaleX, scale_value=self.world.width * self.scale_percent)
+    self.canvas.edit_image(background_ref, scale_type=ScaleType.ScaleY, scale_value=self.world.height * self.scale_percent)
+
+    # Draw Board
+    for y in range(self.world.height):
+      for x in range(self.world.width):
+        cell = self.world.board[y][x]
+        if cell == ECell.Tree: # Tree
+          self.canvas.create_image('Tree', x * self.cell_size, y * self.cell_size, scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
+        elif cell == ECell.Box: # Box
+          self.canvas.create_image('Box', x * self.cell_size, y * self.cell_size, scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
+        elif cell == ECell.PowerUpEmitter: # PowerUp Emitter
+          self.canvas.create_image('PowerUpEmitter', x * self.cell_size, y * self.cell_size, scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
+
+    # Draw Bananas
+    for side in self.sides:
+      img_name = side
+      for banana in self.world.bananas[side]:
+        pos = Pos(position=banana.position)
+        canvas_pos = self._get_canvas_position(pos.x, pos.y, center_origin=True)
+        banana.img_ref = self.canvas.create_image(img_name, canvas_pos['x'], canvas_pos['y'], center_origin=True, scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
+
+    # Apply actions
+    self.canvas.apply_actions()
+
+
+  def on_process_cycle(self):
+    print('cycle %i' % (self.current_cycle,))
+
+    # init variables
+    laser_cells = {side: [] for side in self.sides} # Cells that in emitted lasers in this cycle
+    new_positions = {side: {} for side in self.sides}
+    enters = {side: [] for side in self.sides}
+    new_dirs = {side: {} for side in self.sides}
+
+    # Remove previous lasers
+    for laser_ref in self.lasers_ref:
+      self.canvas.delete_element(laser_ref)
+
+    # Check reloads
+    for side in self.sides:
+      for banana in self.world.bananas[side]:
+        if banana.status != EBananaStatus.Alive:
+          continue
+
+        if banana.curr_reload > 0:
+          banana.curr_reload -= 1
+
+          if banana.curr_reload == 0:
+            self._change_ammo(banana, 1)
+
+    # Check powerups
+    ended_powerups = []
+    for powerup in self.world.powerups:
+      powerup.apearance_time -= 1
+
+      if powerup.apearance_time == 0:
+        ended_powerups.append(powerup)
+        self.canvas.delete_element(powerup.img_ref)
+    # remove ended powerups
+    for powerup in ended_powerups:
+      self.world.powerups.remove(powerup)
+
+    # Read Commands
+    for side in self.commands:
+      for id in self.commands[side]:
+        banana = self.world.bananas[side][id]
+
+        # Check is alive
+        if self.world.bananas[side][id].status != EBananaStatus.Alive:
+          continue
+
+        command = self.commands[side][id]
+        if command.name() == Move.name():
+          new_position = Pos(position=banana.position) + self.move_dirs[command.dir.name]
+          if self.world.board[new_position.y][new_position.x] != ECell.Tree:
+            # Check no ones there
+            is_empty = True
+            for check_side in self.sides:
+              for check_banana in self.world.bananas[check_side]:
+                if check_banana.status == EBananaStatus.Alive and check_banana.position == new_position.position:
+                  is_empty = False
+                  break
+              if not is_empty:
                 break
-        print "y rand s" + y_rnd_s.__str__()
-        print "x rand s" + x_rnd_s.__str__()
-        while True:
-            x_rnd_d = self._rand(len(self.world.board[0]) - 1)
-            y_rnd_d = self._rand(len(self.world.board[0]) - 1)
-            if self.world.board[y_rnd_d][x_rnd_d] == ECell.EMPTY:
-                if self._has_agent(self._xy_to_position(x_rnd_d, y_rnd_d)) == False:
-                    if self._has_power_up(self._xy_to_position(x_rnd_d, y_rnd_d)) == False:
-                        break
 
-        print "y rand d" + y_rnd_d.__str__()
-        print "x rand d" + x_rnd_d.__str__()
+            if is_empty:
+              new_positions[side][id] = new_position.position
+              new_dirs[side][id] = command.dir
+        elif command.name() == Enter.name():
+          pos = Pos(position=banana.position)
+          if self.world.board[pos.y][pos.x] == ECell.Box:
+            enters[side].append(banana) # Later check is alive after lasers?
+        elif command.name() == Fire.name():
+          # Check has ammo
+          if banana.laser_count == 0:
+            continue
 
-        self.world.board[y_rnd_s][x_rnd_s] = ECell.EMPTY
-        self.world.board[y_rnd_d][x_rnd_d] = ECell.BLOCK
-        print self.world.board
-        return [x_rnd_s, y_rnd_s, x_rnd_d, y_rnd_d]
+          self._change_ammo(banana, -1)
+
+          # Emit laser
+          fire_dir = self.fire_dirs[command.dir.name]
+          laser_start_pos = Pos(position=banana.position)
+          laser_end_pos = Pos(position=banana.position)
+          # Go until reach tree or max range
+          for _ in range(banana.laser_range):
+            laser_end_pos += fire_dir
+            if self.world.board[laser_end_pos.y][laser_end_pos.x] == ECell.Tree:
+              break
+            # else
+            laser_cells[side].append((laser_end_pos.position, banana.laser_damage))
+
+            reach_banana = False
+            for check_side in self.sides:
+              for check_banana in self.world.bananas[check_side]:
+                if not self.map_config['friendly_fire'] and side == check_side:
+                  break
+                if laser_end_pos.position == check_banana.position:
+                  reach_banana = True
+              if reach_banana:
+                break
+            if reach_banana:
+              break
+
+
+          # Draw Laser
+          laser_center = {
+            'x': math.floor(((laser_start_pos.x + laser_end_pos.x) / 2) * self.cell_size + self.cell_size / 2),
+            'y': math.floor(((laser_start_pos.y + laser_end_pos.y) / 2) * self.cell_size + self.cell_size / 2)
+          }
+          laser_length = math.sqrt((((laser_start_pos.x - laser_end_pos.x) * self.cell_size) ** 2) + (((laser_start_pos.y - laser_end_pos.y) * self.cell_size) ** 2))
+          laser_ref = self.canvas.create_image('Laser', laser_center['x'], laser_center['y'],
+                      center_origin=True, angle=self.fire_angle[command.dir.name],
+                      scale_type=ScaleType.ScaleX, scale_value=math.floor(laser_length * 100 / self.config['cell_size']))
+          self.lasers_ref.append(laser_ref)
+          # Rotate player
+          self.canvas.edit_image(banana.img_ref, angle=self.fire_angle[command.dir.name])
+
+    # Dealing Damages
+    for side in laser_cells:
+      for position_damage in laser_cells[side]:
+        position, damage = position_damage
+        for b_side in self.sides:
+          # Check friendly fire
+          if not self.map_config['friendly_fire'] and b_side == side:
+            continue
+
+          for banana in self.world.bananas[b_side]:
+            if banana.status != EBananaStatus.Alive:
+              continue
+
+            if banana.position == position: # Hit
+              self._change_health(banana, -damage)
+              if banana.status == EBananaStatus.Dead:
+                self._update_score(side, banana.death_score)
+
+    # Check new positions
+    for side in self.sides:
+      for id in new_positions[side]:
+        banana = self.world.bananas[side][id]
+
+        if banana.status != EBananaStatus.Alive:
+          continue
+
+        can_move = True
+        for side2 in self.sides:
+          for id2 in new_positions[side2]:
+            if side == side2 and id == id2:
+              continue
+
+            if new_positions[side][id] == new_positions[side2][id2]:
+              can_move = False
+              break
+          if not can_move:
+            break
+
+        if can_move:
+          banana.position = new_positions[side][id]
+          # Update canvas
+          pos = Pos(position=banana.position)
+          canvas_pos = self._get_canvas_position(pos.x, pos.y, center_origin=True)
+          self.canvas.edit_image(banana.img_ref, canvas_pos['x'], canvas_pos['y'], angle=self.move_angle[new_dirs[side][id].name])
+
+    # Check Enters
+    for side in self.sides:
+      for banana in enters[side]:
+        if banana.status == EBananaStatus.Alive:
+          self._update_score(side, self.world.enter_score)
+          self._enter(banana)
+
+    # Check end game
+    end_game = False
+    if self.current_cycle >= self.map_config['max_cycles']:
+      end_game = True
+    else:
+      for side in self.sides:
+        for banana in self.world.bananas[side]:
+          if banana.status == EBananaStatus.Alive:
+            break
+        else:
+          end_game = True
+          break
+
+    if end_game:
+      winner = ''
+      if self.world.scores['Dole'] > self.world.scores['Chiquita']:
+        winner = 'Dole'
+      elif self.world.scores['Chiquita'] > self.world.scores['Dole']:
+        winner = 'Chiquita'
+      self.end_game(winner_sidename=winner, details={
+        'Scores': {
+          'Dole': str(self.world.scores['Dole']),
+          'Chiquita': str(self.world.scores['Chiquita'])
+        }
+      })
+
+    # Generate Powerups
+    if self.current_cycle % self.map_config['powerup_creation_offset'] == 0:
+      for position in self.powerup_emmiters:
+        if random.uniform(0.0, 1.0) < self.map_config['powerup_emit_chance']:
+          new_powerup = PowerUp()
+          new_powerup.type = EPowerUpType(random.randint(0, len(EPowerUpType) - 1))
+          new_powerup.position = position
+          new_powerup.apearance_time = self.map_config['powerup_apearance_time']
+          new_powerup.value = 1
+          # Draw
+          pos = Pos(position=position)
+          new_powerup.img_ref = self.canvas.create_image('PowerUp' + new_powerup.type.name, pos.x * self.cell_size, pos.y * self.cell_size, scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
+          # Add to world
+          self.world.powerups.append(new_powerup)
+
+    # Check for pickup
+    for side in self.sides:
+      for banana in self.world.bananas[side]:
+        if banana.status != EBananaStatus.Alive:
+          continue
+
+          for powerup in self.world.powerups:
+            if powerup.position == banana.position:
+              self._pickup_powerup(banana, powerup)
+
+    # Reset commands object
+    self.commands = {side: {} for side in self.sides}
+
+
+  def on_update_clients(self):
+    print('update clients')
+    self.send_snapshot(self.world)
+
+
+  def on_update_gui(self):
+    print('update gui')
+
+    # move bananas to front
+    for side in self.sides:
+      for banana in self.world.bananas[side]:
+        self.canvas.bring_to_front(banana.img_ref)
+
+    # Apply actions
+    self.canvas.apply_actions()
+
+
+  def _get_canvas_position(self, x, y, center_origin=False):
+    addition = self.cell_size // 2 if center_origin else 0
+    return {
+      'x': x * self.cell_size + addition,
+      'y': y * self.cell_size + addition
+    }
+
+
+  def _change_ammo(self, banana, ammo):
+    banana.laser_count += ammo
+    if ammo < 0:
+      if banana.curr_reload == 0:
+        banana.curr_reload = banana.reload_time
+
+    if banana.laser_count < 0:
+      banana.laser_count = 0
+    elif banana.laser_count > banana.max_laser_count:
+      banana.laser_count = banana.max_laser_count
+      banana.curr_reload = 0
+
+
+  def _change_health(self, banana, health):
+    banana.health += health
+
+    if banana.health <= 0:
+      banana.health = 0 # fix health < 0
+      banana.status = EBananaStatus.Dead # Update status
+      self.canvas.delete_element(banana.img_ref) # Remove banana sprite
+    elif banana.health > banana.max_health:
+      banana.health = banana.max_health
+
+
+  def _enter(self, banana):
+    banana.status = EBananaStatus.InBox # Update status
+    self.canvas.delete_element(banana.img_ref) # Remove banana sprite
+
+
+  def _update_score(self, side, score):
+    self.world.scores[side] += score
+
+
+  def _pickup_powerup(self, banana, powerup):
+    picked = False
+
+    if powerup.type == EPowerUpType.Ammo:
+      if banana.laser_count < banana.max_laser_count:
+        self._change_ammo(banana, powerup.value)
+        picked = True
+    elif powerup.type == EPowerUpType.Heal:
+      if banana.health < banana.max_health:
+        self._change_health(banana, powerup.value)
+        picked = True
+
+    if picked:
+      self.canvas.delete_element(powerup.img_ref)
+
+
+
+class Pos(object):
+  x = 0
+  y = 0
+  position = 0
+
+
+  def __init__(self, x=None, y=None, position=None):
+    if position is not None:
+      self.position = position
+      self._position_to_xy()
+    else:
+      self.x = x
+      self.y = y
+      self._xy_to_position()
+
+
+  def _position_to_xy(self):
+    self.x = self.position % BOARD_WIDTH
+    self.y = self.position // BOARD_HEIGHT
+
+
+  def _xy_to_position(self):
+    self.position = (self.y * BOARD_WIDTH) + self.x
+
+
+  def __add__(self, other):
+    return Pos(x=self.x + other.x, y=self.y + other.y)

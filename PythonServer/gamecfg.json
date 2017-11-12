@@ -1,61 +1,63 @@
 {
-	"general": {
-		"game_name": "XO",
-		"command_files": [
-			"ks/commands"
-		],
-		"allowed_teams": {},
-		"offline_mode": true,
-		"": "online configs",
-		"match_id": "0"
-	},
+  "general": {
+    "game_name": "MozMaze",
+    "command_files": [
+      "ks/commands"
+    ],
+    "allowed_teams": {},
+    "offline_mode": true,
+    "": "online configs",
+    "match_id": "0"
+  },
 
-	"net": {
-		"host": "0.0.0.0",
-		"port": 5000,
-		"keyfile": "certs/key.pem",
-		"certfile": "certs/cert.pem"
-	},
+  "net": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "keyfile": "certs/key.pem",
+    "certfile": "certs/cert.pem"
+  },
 
-	"gui": {
-		"host": "0.0.0.0",
-		"port": 5001,
-		"save_replay": true,
-		"replay_dir": "replays",
-		"replay_filename": null,
-		"width": 512,
-		"height": 512,
-		"images": {
-			"Background": "images/backG.jpg",
-			"Block": "images/block.jpg",
-			"Fire": "images/laser.png",
-			"Agent_team_player1":"images/a1.png",
-			"Agent_team_player2":"images/a2.png",
-			"Gate":"images/gate.png",
-			"Empty":"images/empty.jpg",
-			"laser_powerup":"images/laser_powerup.png",
-			"healpack_powerup":"images/healpack_powerup.png"
-		}
-	},
+  "gui": {
+    "host": "0.0.0.0",
+    "port": 5001,
+    "max_spectators": 3,
+    "save_replay": true,
+    "replay_dir": "replays",
+    "replay_filename": null,
+    "width": 512,
+    "height": 512,
+    "images": {
+      "Background": "images/background.png",
+      "Tree": "images/tree.png",
+      "Box": "images/box.png",
+      "PowerUpEmitter": "images/powerup_emitter.png",
+      "Laser": "images/laser.png",
+      "Chiquita": "images/banana_chiquita.png",
+      "Dole": "images/banana_dole.png",
+      "PowerUpAmmo": "images/powerup_ammo.png",
+      "PowerUpHeal": "images/powerup_heal.png"
+    }
+  },
 
-	"sides": {
-		"player1": ["0"],
-		"player2": ["0"]
-	},
+  "sides": {
+    "Dole": ["0"],
+    "Chiquita": ["0"]
+  },
 
-	"game_handler": {
-		"": "base game handler configs",
-		"start_waiting_time": 3,
-		"": "realtime game handler configs",
-		"cycle_duration": 1,
-		"max_total_commands": 10,
-		"max_team_commands": 10,
-		"max_agent_commands": 10,
-		"": "turnbased game handler configs",
-		"auto_change_turn": true,
-		"auto_change_turn_sequence": ["player1", "player2"],
-		"": "my configs",
-		"map": "maps/map.json"
-
-	}
+  "game_handler": {
+    "": "base game handler configs",
+    "start_time": "2017-11-08 00:50",
+    "start_waiting_time": 3,
+    "": "realtime game handler configs",
+    "cycle_duration": 1,
+    "max_total_commands": 10,
+    "max_team_commands": 10,
+    "max_agent_commands": 10,
+    "": "turnbased game handler configs",
+    "auto_change_turn": true,
+    "auto_change_turn_sequence": ["Dole", "Chiquita"],
+    "": "my configs",
+    "cell_size": 64,
+    "map": "maps/1.json"
+  }
 }
