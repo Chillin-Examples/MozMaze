@@ -1,31 +1,22 @@
 {
   "board": [
-    "tttttttttttt",
-    "tpeeeeeeeept",
-    "teeeeeeeeeet",
-    "teeeeeeeeeet",
-    "teeeeeeeeeet",
-    "teeeeteteeet",
-    "teeeetbteeet",
-    "teeeeteteeet",
-    "teeeeeeeeeet",
-    "teeeeeeeeeet",
-    "tpeeeeeeeept",
-    "tttttttttttt"
+    "ttttttt",
+    "teepeet",
+    "teeeeet",
+    "teebeet",
+    "teeeeet",
+    "teepeet",
+    "ttttttt"
   ],
 
   "bananas": {
     "Dole": [
-      { "position": 14 },
-      { "position": 21 },
-      { "position": 26 },
-      { "position": 33 }
+      { "position": 8 },
+      { "position": 12 }
     ],
     "Chiquita": [
-      { "position": 129 },
-      { "position": 122 },
-      { "position": 117 },
-      { "position": 110 }
+      { "position": 36 },
+      { "position": 40 }
     ]
   },
 
@@ -46,6 +37,6 @@
   "powerup_apearance_time": 4,
   "powerup_emit_chance": 0.9,
 
-  "max_cycles": 200,
+  "max_cycles": 30,
   "friendly_fire": false
 }
