@@ -72,9 +72,9 @@ class GameHandler(TurnbasedGameHandler):
         new_banana.status = EBananaStatus.Alive
         new_banana.position = banana['position']
         new_banana.health = self.map_config['init_health']
-        new_banana.max_health = self.map_config['init_health']
+        new_banana.max_health = self.map_config['max_health']
         new_banana.laser_count = self.map_config['init_laser_count']
-        new_banana.max_laser_count = self.map_config['init_laser_count']
+        new_banana.max_laser_count = self.map_config['max_laser_count']
         new_banana.laser_range = self.map_config['init_laser_range']
         new_banana.laser_damage = self.map_config['init_laser_damage']
         new_banana.curr_reload = 0
@@ -363,14 +363,19 @@ class GameHandler(TurnbasedGameHandler):
           self.world.powerups.append(new_powerup)
 
     # Check for pickup
+    picked_powerups = []
     for side in self.sides:
       for banana in self.world.bananas[side]:
         if banana.status != EBananaStatus.Alive:
           continue
 
-          for powerup in self.world.powerups:
-            if powerup.position == banana.position:
-              self._pickup_powerup(banana, powerup)
+        for powerup in self.world.powerups:
+          if powerup.position == banana.position:
+            if self._pickup_powerup(banana, powerup):
+              picked_powerups.append(powerup)
+    # remove picked powerups
+    for powerup in picked_powerups:
+      self.world.powerups.remove(powerup)
 
     # Reset commands object
     self.commands = {side: {} for side in self.sides}
@@ -409,9 +414,9 @@ class GameHandler(TurnbasedGameHandler):
 
     if banana.laser_count < 0:
       banana.laser_count = 0
-    elif banana.laser_count > banana.max_laser_count:
-      banana.laser_count = banana.max_laser_count
-      banana.curr_reload = 0
+    elif banana.laser_count >= banana.max_laser_count:
+      banana.laser_count = banana.max_laser_count # fix laser_count > max_laser_count
+      banana.curr_reload = 0 # stop reloading
 
 
   def _change_health(self, banana, health):
@@ -448,6 +453,8 @@ class GameHandler(TurnbasedGameHandler):
 
     if picked:
       self.canvas.delete_element(powerup.img_ref)
+      return True
+    return False
 
 
 
