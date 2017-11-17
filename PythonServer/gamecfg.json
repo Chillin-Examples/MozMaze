@@ -58,6 +58,6 @@
     "auto_change_turn_sequence": ["Dole", "Chiquita"],
     "": "my configs",
     "cell_size": 64,
-    "map": "maps/1.json"
+    "map": "maps/2.json"
   }
 }

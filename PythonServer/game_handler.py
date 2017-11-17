@@ -102,14 +102,14 @@ class GameHandler(TurnbasedGameHandler):
       EFireDir.LeftUp.name:    Pos(x=-1, y=-1)
     }
     self.fire_angle = {
-      EFireDir.Up.name:        90,
-      EFireDir.UpRight.name:   45,
-      EFireDir.Right.name:     0,
-      EFireDir.RightDown.name: -45,
-      EFireDir.Down.name:      -90,
-      EFireDir.DownLeft.name:  -135,
-      EFireDir.Left.name:      180,
-      EFireDir.LeftUp.name:    135
+      EFireDir.Up.name:        -90,
+      EFireDir.UpRight.name:   -135,
+      EFireDir.Right.name:     180,
+      EFireDir.RightDown.name: 135,
+      EFireDir.Down.name:      90,
+      EFireDir.DownLeft.name:  45,
+      EFireDir.Left.name:      0,
+      EFireDir.LeftUp.name:    -45
     }
 
     self.move_dirs = {
@@ -119,10 +119,10 @@ class GameHandler(TurnbasedGameHandler):
       EMoveDir.Left.name:      Pos(x=-1, y=0)
     }
     self.move_angle = {
-      EMoveDir.Up.name:        90,
-      EMoveDir.Right.name:     0,
-      EMoveDir.Down.name:      -90,
-      EMoveDir.Left.name:      180
+      EMoveDir.Up.name:        -90,
+      EMoveDir.Right.name:     180,
+      EMoveDir.Down.name:      90,
+      EMoveDir.Left.name:      0
     }
 
 
