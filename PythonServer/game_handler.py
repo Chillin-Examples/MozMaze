@@ -29,8 +29,7 @@ class GameHandler(TurnbasedGameHandler):
         return
 
     print('command: %s(%i) %s' % (side_name, command.id, command_type))
-    if command.id not in self.commands[side_name]:
-      self.commands[side_name][command.id] = command
+    self.commands[side_name][command.id] = command
 
 
   def on_initialize(self):

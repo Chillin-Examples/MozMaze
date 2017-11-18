@@ -74,6 +74,6 @@
     "": "my configs",
     "cell_size": 64,
     "statuses_width": 450,
-    "map": "maps/2.json"
+    "map": "maps/big.json"
   }
 }
