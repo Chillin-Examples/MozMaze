@@ -85,14 +85,20 @@ class GameHandler(TurnbasedGameHandler):
 
     # Variables
     self.commands = {side: {} for side in self.sides}
+    self.num_of_enters = {side: 0 for side in self.sides}
+    self.num_of_kills = {side: 0 for side in self.sides}
     self.delete_next_cycle = []
     self.hidden_refs = []
     self.background_ref = ''
     self.lasers_ref = []
 
+    if not self.config['show_statuses']:
+      self.config['statuses_width'] = 0
+
     self.scale_factor = (self.canvas.width - self.config['statuses_width']) / (self.world.width * self.config['cell_size'])
-    self.scale_percent = math.floor(self.scale_factor * 100)
-    self.cell_size = math.floor(self.config['cell_size'] * self.scale_factor)
+    self.scale_percent = math.ceil(self.scale_factor * 100)
+    self.cell_size = math.ceil(self.config['cell_size'] * self.scale_factor)
+    self.font_size = self.cell_size // 2
 
     self.fire_dirs = {
       EFireDir.Up.name:        Pos(x=0, y=-1),
@@ -114,6 +120,18 @@ class GameHandler(TurnbasedGameHandler):
       EFireDir.Left.name:      0,
       EFireDir.LeftUp.name:    -45
     }
+    fire_start_offset_value = math.ceil(20 * self.scale_factor)
+    fire_start_offset_value_rad2 = math.ceil(fire_start_offset_value / math.sqrt(2))
+    self.fire_start_offset = {
+      EFireDir.Up.name:        [0, fire_start_offset_value],
+      EFireDir.UpRight.name:   [-fire_start_offset_value_rad2, fire_start_offset_value_rad2],
+      EFireDir.Right.name:     [-fire_start_offset_value, 0],
+      EFireDir.RightDown.name: [-fire_start_offset_value_rad2, -fire_start_offset_value_rad2],
+      EFireDir.Down.name:      [0, -fire_start_offset_value],
+      EFireDir.DownLeft.name:  [fire_start_offset_value_rad2, -fire_start_offset_value_rad2],
+      EFireDir.Left.name:      [fire_start_offset_value, 0],
+      EFireDir.LeftUp.name:    [fire_start_offset_value_rad2, fire_start_offset_value_rad2]
+    }
 
     self.move_dirs = {
       EMoveDir.Up.name:        Pos(x=0, y=-1),
@@ -128,73 +146,93 @@ class GameHandler(TurnbasedGameHandler):
       EMoveDir.Left.name:      0
     }
 
-    self.statuses = {
-      'start_x': self.canvas.width - self.config['statuses_width'],
-      'end_x': self.canvas.width,
-      'mid_x': self.canvas.width - (self.config['statuses_width'] // 2),
+    if self.config['show_statuses']:
+      self.statuses = {
+        'start_x': self.canvas.width - self.config['statuses_width'],
+        'end_x': self.canvas.width,
+        'mid_x': self.canvas.width - (self.config['statuses_width'] // 2),
 
-      'start_y': 125,
+        'cycle': None,
+        'cell_size': 50,
 
-      'cycle': None,
-      'cell_size': math.floor(self.config['cell_size'] / 3),
-
-      'bananas': {side: {} for side in self.sides}
-    }
-    self.statuses['step_x'] = self.statuses['cell_size']
-    self.statuses['step_y'] = self.statuses['cell_size'] + 6
-    self.statuses['health_offset_x'] = 5
-    self.statuses['ammo_offset_x'] = self.statuses['health_offset_x'] + self.map_config['max_health'] * self.statuses['step_x'] + 5
-    self.statuses['reload_offset_x'] = self.statuses['mid_x'] - self.statuses['start_x'] - 30
+        'bananas': {side: {} for side in self.sides}
+      }
+      self.statuses['start_x_Chiquita'] = self.statuses['start_x']
+      self.statuses['mid_x_Chiquita'] = (self.statuses['start_x'] + self.statuses['mid_x']) // 2
+      self.statuses['start_x_Dole'] = self.statuses['mid_x']
+      self.statuses['mid_x_Dole'] = (self.statuses['mid_x'] + self.statuses['end_x']) // 2
+      self.statuses['font_size'] = self.statuses['cell_size'] + 5
+      self.statuses['start_y'] = 5 * (self.statuses['font_size'] + 10) + self.config['cell_size'] + 30
+      self.statuses['step_x'] = self.statuses['cell_size']
+      self.statuses['step_y'] = self.statuses['cell_size'] + 20
+      self.statuses['calc_y'] = lambda id: self.statuses['start_y'] + self.statuses['step_y'] * id
+      self.statuses['health_offset_x'] = self.statuses['font_size'] + 5
+      self.statuses['ammo_offset_x'] = self.statuses['health_offset_x'] + self.map_config['max_health'] * self.statuses['step_x'] + 5
+      self.statuses['reload_offset_x'] = self.statuses['mid_x'] - self.statuses['start_x'] - self.statuses['font_size'] - 5
 
 
   def on_initialize_gui(self):
     print('initialize gui')
 
     # Draw Statuses
-    self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: -', self.statuses['mid_x'], 20, self.canvas.make_rgba(0, 0, 0, 255), 20, center_origin=True)
-    self.canvas.create_image('ChiquitaLogo', (self.statuses['start_x'] + self.statuses['mid_x']) // 2, 80, center_origin=True)
-    self.canvas.create_image('DoleLogo', (self.statuses['end_x'] + self.statuses['mid_x']) // 2, 80, center_origin=True)
-    self.canvas.create_line(self.statuses['mid_x'], 45, self.statuses['mid_x'], self.canvas.height, self.canvas.make_rgba(0, 0, 0, 255), stroke_width=2)
-    for side in self.sides:
-      y = self.statuses['start_y']
-      start_x = self.statuses['start_x'] if side == 'Chiquita' else self.statuses['mid_x']
+    if self.config['show_statuses']:
+      self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: -', self.statuses['mid_x'], self.statuses['font_size'], self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
 
-      for banana in self.world.bananas[side]:
-        self.statuses['bananas'][side][banana.id] = {
-          'health_ref': [],
-          'ammo_ref': [],
-          'reload': ''
-        }
+      self.canvas.create_text('Score', self.statuses['mid_x'], 2 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+      self.statuses['scores_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 2 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['font_size'], center_origin=True)
+      self.statuses['scores_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 2 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['font_size'], center_origin=True)
 
-        x = start_x + self.statuses['health_offset_x']
-        for i in range(banana.max_health):
-          ref_type = ERefType.Full if i < banana.health else ERefType.Empty
-          img_name = 'Health' if i < banana.health else 'HealthEmpty'
+      self.canvas.create_text('Kill', self.statuses['mid_x'], 3 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+      self.statuses['kills_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 3 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['font_size'], center_origin=True)
+      self.statuses['kills_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 3 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['font_size'], center_origin=True)
 
-          ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-          self.statuses['bananas'][side][banana.id]['health_ref'].append((ref, ref_type, x, y))
+      self.canvas.create_text('In Box', self.statuses['mid_x'], 4 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+      self.statuses['enters_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 4 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['font_size'], center_origin=True)
+      self.statuses['enters_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 4 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['font_size'], center_origin=True)
 
-          x += self.statuses['step_x']
+      self.canvas.create_image('ChiquitaLogo', self.statuses['mid_x_Chiquita'], self.statuses['start_y'] - self.config['cell_size'] // 2 - 15, center_origin=True)
+      self.canvas.create_image('DoleLogo', self.statuses['mid_x_Dole'], self.statuses['start_y'] - self.config['cell_size'] // 2 - 15, center_origin=True)
+      self.canvas.create_line(self.statuses['mid_x'], self.statuses['start_y'] - self.config['cell_size'], self.statuses['mid_x'], self.canvas.height, self.canvas.make_rgba(0, 0, 0, 150), stroke_width=1)
+      for side in self.sides:
+        start_x = self.statuses['start_x_' + side]
 
-        x = start_x + self.statuses['ammo_offset_x']
-        for i in range(banana.max_laser_count):
-          ref_type = ERefType.Full if i < banana.laser_count else ERefType.Empty
-          img_name = 'Ammo' if i < banana.laser_count else 'AmmoEmpty'
+        for banana in self.world.bananas[side]:
+          y = self.statuses['calc_y'](banana.id)
 
-          ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-          self.statuses['bananas'][side][banana.id]['ammo_ref'].append((ref, ref_type, x, y))
+          self.statuses['bananas'][side][banana.id] = {
+            'health_ref': [],
+            'ammo_ref': [],
+            'reload': ''
+          }
 
-          x += self.statuses['step_x']
+          self.canvas.create_text(str(banana.id), start_x + self.statuses['font_size'] // 2, y + self.statuses['cell_size'] // 2, self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
 
-        x = start_x + self.statuses['reload_offset_x']
-        self.statuses['bananas'][side][banana.id]['reload_ref'] = self.canvas.create_text('0', x, y, self.canvas.make_rgba(0, 0, 0, 255), 20)
+          x = start_x + self.statuses['health_offset_x']
+          for i in range(banana.max_health):
+            ref_type = ERefType.Full if i < banana.health else ERefType.Empty
+            img_name = 'Health' if i < banana.health else 'HealthEmpty'
 
-        y += self.statuses['step_y']
+            ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
+            self.statuses['bananas'][side][banana.id]['health_ref'].append((ref, ref_type, x, y))
+
+            x += self.statuses['step_x']
+
+          x = start_x + self.statuses['ammo_offset_x']
+          for i in range(banana.max_laser_count):
+            ref_type = ERefType.Full if i < banana.laser_count else ERefType.Empty
+            img_name = 'Ammo' if i < banana.laser_count else 'AmmoEmpty'
+
+            ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
+            self.statuses['bananas'][side][banana.id]['ammo_ref'].append((ref, ref_type, x, y))
+
+            x += self.statuses['step_x']
+
+          x = start_x + self.statuses['reload_offset_x']
+          self.statuses['bananas'][side][banana.id]['reload_ref'] = self.canvas.create_text('0', x + self.statuses['font_size'] // 2, y + self.statuses['cell_size'] // 2, self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
 
     # Draw background
     self.background_ref = self.canvas.create_image('Background', 0, 0)
-    self.canvas.edit_image(self.background_ref, scale_type=ScaleType.ScaleX, scale_value=self.world.width * self.scale_percent)
-    self.canvas.edit_image(self.background_ref, scale_type=ScaleType.ScaleY, scale_value=self.world.height * self.scale_percent)
+    self.canvas.edit_image(self.background_ref, scale_type=ScaleType.ScaleToWidth, scale_value=self.canvas.width - self.config['statuses_width'])
 
     # Draw Board
     for y in range(self.world.height):
@@ -213,7 +251,17 @@ class GameHandler(TurnbasedGameHandler):
       for banana in self.world.bananas[side]:
         pos = Pos(position=banana.position)
         canvas_pos = self._get_canvas_position(pos.x, pos.y, center_origin=True)
+        banana.angle = self.move_angle[EMoveDir.Left.name]
         banana.img_ref = self.canvas.create_image(img_name, canvas_pos['x'], canvas_pos['y'], center_origin=True, scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
+
+        text_color = self.canvas.make_rgba(0, 0, 255, 255) if side == 'Chiquita' else self.canvas.make_rgba(255, 0, 0, 255)
+        banana.id_ref = self.canvas.create_text(str(banana.id), canvas_pos['x'] + self.cell_size // 2 - 10, canvas_pos['y'] - self.cell_size // 2, text_color, self.font_size, center_origin=True)
+
+        x1, y1, x2, y2 = self._get_line_xys(banana, banana.health, banana.max_health, 0)
+        banana.health_ref = self.canvas.create_line(x1, y1, x2, y2, self.canvas.make_rgba(255, 0, 0, 150), stroke_width=5)
+
+        x1, y1, x2, y2 = self._get_line_xys(banana, banana.laser_count, banana.max_laser_count, 5)
+        banana.ammo_ref = self.canvas.create_line(x1, y1, x2, y2, self.canvas.make_rgba(0, 0, 255, 150), stroke_width=5)
 
     # Apply actions
     self.canvas.apply_actions()
@@ -322,16 +370,10 @@ class GameHandler(TurnbasedGameHandler):
             if reach_banana:
               break
 
-
-          # Draw Laser
-          laser_center = {
-            'x': math.floor(((laser_start_pos.x + laser_end_pos.x) / 2) * self.cell_size + self.cell_size / 2),
-            'y': math.floor(((laser_start_pos.y + laser_end_pos.y) / 2) * self.cell_size + self.cell_size / 2)
-          }
-          laser_length = math.sqrt((((laser_start_pos.x - laser_end_pos.x) * self.cell_size) ** 2) + (((laser_start_pos.y - laser_end_pos.y) * self.cell_size) ** 2))
-          laser_ref = self.canvas.create_image('Laser', laser_center['x'], laser_center['y'],
-                      center_origin=True, angle=self.fire_angle[command.dir.name],
-                      scale_type=ScaleType.ScaleX, scale_value=math.floor(laser_length * 100 / self.config['cell_size']))
+          start_offset = self.fire_start_offset[command.dir.name]
+          laser_ref = self.canvas.create_line(laser_start_pos.x * self.cell_size + self.cell_size // 2 + start_offset[0], laser_start_pos.y * self.cell_size + self.cell_size // 2 + start_offset[1],
+                                              laser_end_pos.x * self.cell_size + self.cell_size // 2, laser_end_pos.y * self.cell_size + self.cell_size // 2,
+                                              self.canvas.make_rgba(255, 0, 0, 255), stroke_width=math.ceil(10 * self.scale_factor))
           self.delete_next_cycle.append(laser_ref)
           self.lasers_ref.append(laser_ref)
           # Add Fire sprite
@@ -342,7 +384,7 @@ class GameHandler(TurnbasedGameHandler):
             scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
           self.delete_next_cycle.append(fire_img_ref)
           # Rotate player and add to hidden refs
-          self.canvas.edit_image(banana.img_ref, angle=self.fire_angle[command.dir.name])
+          banana.angle = self.fire_angle[command.dir.name]
           self.hidden_refs.append(banana.img_ref)
 
     # Dealing Damages
@@ -362,6 +404,11 @@ class GameHandler(TurnbasedGameHandler):
               self._change_health(banana, -damage)
               if banana.status == EBananaStatus.Dead:
                 self._update_score(side, banana.death_score)
+                self.num_of_kills[side] += 1
+                # update statuses
+                if self.config['show_statuses']:
+                  self.canvas.create_image('Dead', self.statuses['mid_x_' + b_side], self.statuses['calc_y'](banana.id) + self.statuses['cell_size'] // 2,
+                                          scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['step_y'], center_origin=True)
 
     # Check new positions
     for side in self.sides:
@@ -385,10 +432,7 @@ class GameHandler(TurnbasedGameHandler):
 
         if can_move:
           banana.position = new_positions[side][id]
-          # Update canvas
-          pos = Pos(position=banana.position)
-          canvas_pos = self._get_canvas_position(pos.x, pos.y, center_origin=True)
-          self.canvas.edit_image(banana.img_ref, canvas_pos['x'], canvas_pos['y'], angle=self.move_angle[new_dirs[side][id].name])
+          banana.angle = self.move_angle[new_dirs[side][id].name]
 
     # Check Enters
     for side in self.sides:
@@ -396,6 +440,11 @@ class GameHandler(TurnbasedGameHandler):
         if banana.status == EBananaStatus.Alive:
           self._update_score(side, self.world.enter_score)
           self._enter(banana)
+          self.num_of_enters[side] += 1
+          # update statuses
+          if self.config['show_statuses']:
+            self.canvas.create_image('Box', self.statuses['mid_x_' + side], self.statuses['calc_y'](banana.id) + self.statuses['cell_size'] // 2,
+                                    scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['step_y'], center_origin=True)
 
     # Check end game
     end_game = False
@@ -472,43 +521,68 @@ class GameHandler(TurnbasedGameHandler):
           if banana.img_ref in self.hidden_refs:
             self.canvas.send_to_back(banana.img_ref, self.background_ref)
           else:
+            self._update_banana_ui(banana)
             self.canvas.bring_to_front(banana.img_ref)
+            self.canvas.bring_to_front(banana.id_ref, target_ref=banana.img_ref)
+            self.canvas.bring_to_front(banana.health_ref, target_ref=banana.img_ref)
+            self.canvas.bring_to_front(banana.ammo_ref, target_ref=banana.img_ref)
 
     # Move lasers to front
     for laser_ref in self.lasers_ref:
       self.canvas.bring_to_front(laser_ref)
 
     # Update Statuses part
-    self.canvas.edit_text(self.statuses['cycle_ref'], 'Cycle: ' + str(self.current_cycle))
+    if self.config['show_statuses']:
+      self.canvas.edit_text(self.statuses['cycle_ref'], 'Cycle: ' + str(self.current_cycle))
 
-    for side in self.sides:
-      for banana in self.world.bananas[side]:
-        status = self.statuses['bananas'][side][banana.id]
+      for side in self.sides:
+        self.canvas.edit_text(self.statuses['scores_' + side], text=str(self.world.scores[side]))
+        self.canvas.edit_text(self.statuses['kills_' + side], text=str(self.num_of_kills[side]))
+        self.canvas.edit_text(self.statuses['enters_' + side], text=str(self.num_of_enters[side]))
 
-        for i in range(banana.max_health):
-          ref, ref_type, x, y = status['health_ref'][i]
-          new_ref_type = ERefType.Full if i < banana.health else ERefType.Empty
-          if ref_type != new_ref_type:
-            self.canvas.delete_element(ref)
-            img_name = 'Health' if new_ref_type == ERefType.Full else 'HealthEmpty'
-            ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-            ref_type = new_ref_type
-          status['health_ref'][i] = (ref, ref_type, x, y)
+      for side in self.sides:
+        for banana in self.world.bananas[side]:
+          status = self.statuses['bananas'][side][banana.id]
 
-        for i in range(banana.max_laser_count):
-          ref, ref_type, x, y = status['ammo_ref'][i]
-          new_ref_type = ERefType.Full if i < banana.laser_count else ERefType.Empty
-          if ref_type != new_ref_type:
-            self.canvas.delete_element(ref)
-            img_name = 'Ammo' if new_ref_type == ERefType.Full else 'AmmoEmpty'
-            ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-            ref_type = new_ref_type
-          status['ammo_ref'][i] = (ref, ref_type, x, y)
+          for i in range(banana.max_health):
+            ref, ref_type, x, y = status['health_ref'][i]
+            new_ref_type = ERefType.Full if i < banana.health else ERefType.Empty
+            if ref_type != new_ref_type:
+              self.canvas.delete_element(ref)
+              img_name = 'Health' if new_ref_type == ERefType.Full else 'HealthEmpty'
+              ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
+              self.canvas.send_to_back(ref)
+              ref_type = new_ref_type
+            status['health_ref'][i] = (ref, ref_type, x, y)
 
-        self.canvas.edit_text(status['reload_ref'], str(banana.curr_reload))
+          for i in range(banana.max_laser_count):
+            ref, ref_type, x, y = status['ammo_ref'][i]
+            new_ref_type = ERefType.Full if i < banana.laser_count else ERefType.Empty
+            if ref_type != new_ref_type:
+              self.canvas.delete_element(ref)
+              img_name = 'Ammo' if new_ref_type == ERefType.Full else 'AmmoEmpty'
+              ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
+              self.canvas.send_to_back(ref)
+              ref_type = new_ref_type
+            status['ammo_ref'][i] = (ref, ref_type, x, y)
+
+          self.canvas.edit_text(status['reload_ref'], str(banana.curr_reload))
 
     # Apply actions
     self.canvas.apply_actions()
+
+
+  def _get_line_xys(self, banana, curr_val, max_val, offset):
+    pos = Pos(position=banana.position)
+    canvas_pos = self._get_canvas_position(pos.x, pos.y, center_origin=True)
+    y1 = y2 = canvas_pos['y'] + self.cell_size // 2 - 7.5 + offset
+    x1 = canvas_pos['x'] - self.cell_size // 2 + 5
+    if curr_val == 0:
+      x2 = x1
+    else:
+      x2 = x1 + math.ceil((self.cell_size - 10) * (curr_val / max_val))
+
+    return (x1, y1, x2, y2)
 
 
   def _get_canvas_position(self, x, y, center_origin=False):
@@ -517,6 +591,26 @@ class GameHandler(TurnbasedGameHandler):
       'x': x * self.cell_size + addition,
       'y': y * self.cell_size + addition
     }
+
+
+  def _remove_banana_ui(self, banana):
+    self.canvas.delete_element(banana.img_ref)
+    self.canvas.delete_element(banana.id_ref)
+    self.canvas.delete_element(banana.health_ref)
+    self.canvas.delete_element(banana.ammo_ref)
+
+
+  def _update_banana_ui(self, banana):
+    pos = Pos(position=banana.position)
+    canvas_pos = self._get_canvas_position(pos.x, pos.y, center_origin=True)
+    self.canvas.edit_image(banana.img_ref, canvas_pos['x'], canvas_pos['y'], angle=banana.angle)
+    self.canvas.edit_image(banana.id_ref, canvas_pos['x'] + self.cell_size // 2 - 10, canvas_pos['y'] - self.cell_size // 2)
+
+    x1, y1, x2, y2 = self._get_line_xys(banana, banana.health, banana.max_health, 0)
+    self.canvas.edit_line(banana.health_ref, x1=x1, y1=y1, x2=x2, y2=y2)
+
+    x1, y1, x2, y2 = self._get_line_xys(banana, banana.laser_count, banana.max_laser_count, 5)
+    self.canvas.edit_line(banana.ammo_ref, x1=x1, y1=y1, x2=x2, y2=y2)
 
 
   def _change_ammo(self, banana, ammo):
@@ -538,18 +632,20 @@ class GameHandler(TurnbasedGameHandler):
     if banana.health <= 0:
       banana.health = 0 # fix health < 0
       banana.status = EBananaStatus.Dead # Update status
-      self.canvas.delete_element(banana.img_ref) # Remove banana sprite
+      self._remove_banana_ui(banana)
       # Add Dead image
       pos = Pos(position=banana.position)
       canvas_pos = self._get_canvas_position(pos.x, pos.y)
-      banana.img_ref = self.canvas.create_image('Dead', canvas_pos['x'], canvas_pos['y'], scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
+      self.canvas.create_image('Dead', canvas_pos['x'], canvas_pos['y'], scale_type=ScaleType.ScaleToWidth, scale_value=self.cell_size)
     elif banana.health > banana.max_health:
       banana.health = banana.max_health
 
 
   def _enter(self, banana):
     banana.status = EBananaStatus.InBox # Update status
-    self.canvas.delete_element(banana.img_ref) # Remove banana sprite
+    self._remove_banana_ui(banana)
+    if self.config['show_statuses']:
+      pass
 
 
   def _update_score(self, side, score):

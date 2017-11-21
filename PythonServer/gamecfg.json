@@ -24,11 +24,10 @@
     "save_replay": true,
     "replay_dir": "replays",
     "replay_filename": null,
-    "width": 962,
-    "height": 512,
+    "width": 2000,
+    "height": 1000,
     "images": {
       "Background": "images/background.png",
-      "Statuses": "images/statuses.png",
 
       "Tree": "images/tree.png",
       "Box": "images/box.png",
@@ -72,8 +71,9 @@
     "auto_change_turn": true,
     "auto_change_turn_sequence": ["Dole", "Chiquita"],
     "": "my configs",
-    "cell_size": 64,
-    "statuses_width": 450,
+    "cell_size": 150,
+    "show_statuses": true,
+    "statuses_width": 1000,
     "map": "maps/big.json"
   }
 }
