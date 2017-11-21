@@ -151,8 +151,7 @@ class GameHandler(TurnbasedGameHandler):
     print('initialize gui')
 
     # Draw Statuses
-    cycle_ref = self.canvas.create_text('Cycle: -', self.statuses['mid_x'], 20, self.canvas.make_rgba(0, 0, 0, 255), 20, center_origin=True)
-    self.statuses['cycle'] = (cycle_ref, self.statuses['mid_x'], 20)
+    self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: -', self.statuses['mid_x'], 20, self.canvas.make_rgba(0, 0, 0, 255), 20, center_origin=True)
     self.canvas.create_image('ChiquitaLogo', (self.statuses['start_x'] + self.statuses['mid_x']) // 2, 80, center_origin=True)
     self.canvas.create_image('DoleLogo', (self.statuses['end_x'] + self.statuses['mid_x']) // 2, 80, center_origin=True)
     self.canvas.create_line(self.statuses['mid_x'], 45, self.statuses['mid_x'], self.canvas.height, self.canvas.make_rgba(0, 0, 0, 255), stroke_width=2)
@@ -188,8 +187,7 @@ class GameHandler(TurnbasedGameHandler):
           x += self.statuses['step_x']
 
         x = start_x + self.statuses['reload_offset_x']
-        reload_ref = self.canvas.create_text('0', x, y, self.canvas.make_rgba(0, 0, 0, 255), 20)
-        self.statuses['bananas'][side][banana.id]['reload'] = (reload_ref, x, y)
+        self.statuses['bananas'][side][banana.id]['reload_ref'] = self.canvas.create_text('0', x, y, self.canvas.make_rgba(0, 0, 0, 255), 20)
 
         y += self.statuses['step_y']
 
@@ -313,6 +311,8 @@ class GameHandler(TurnbasedGameHandler):
             reach_banana = False
             for check_side in self.sides:
               for check_banana in self.world.bananas[check_side]:
+                if check_banana.status != EBananaStatus.Alive:
+                  continue
                 if not self.map_config['friendly_fire'] and side == check_side:
                   break
                 if laser_end_pos.position == check_banana.position:
@@ -479,10 +479,7 @@ class GameHandler(TurnbasedGameHandler):
       self.canvas.bring_to_front(laser_ref)
 
     # Update Statuses part
-    cycle_ref, cycle_x, cycle_y = self.statuses['cycle']
-    self.canvas.delete_element(cycle_ref)
-    cycle_ref = self.canvas.create_text('Cycle: ' + str(self.current_cycle), cycle_x, cycle_y, self.canvas.make_rgba(0, 0, 0, 255), 20, center_origin=True)
-    self.statuses['cycle'] = (cycle_ref, cycle_x, cycle_y)
+    self.canvas.edit_text(self.statuses['cycle_ref'], 'Cycle: ' + str(self.current_cycle))
 
     for side in self.sides:
       for banana in self.world.bananas[side]:
@@ -508,10 +505,7 @@ class GameHandler(TurnbasedGameHandler):
             ref_type = new_ref_type
           status['ammo_ref'][i] = (ref, ref_type, x, y)
 
-        ref, x, y = status['reload']
-        self.canvas.delete_element(ref)
-        ref = self.canvas.create_text(str(banana.curr_reload), x, y, self.canvas.make_rgba(0, 0, 0, 255), 20)
-        status['reload'] = (ref, x, y)
+        self.canvas.edit_text(status['reload_ref'], str(banana.curr_reload))
 
     # Apply actions
     self.canvas.apply_actions()
