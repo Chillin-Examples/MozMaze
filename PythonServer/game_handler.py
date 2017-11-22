@@ -77,7 +77,7 @@ class GameHandler(TurnbasedGameHandler):
         new_banana.max_laser_count = self.map_config['max_laser_count']
         new_banana.laser_range = self.map_config['init_laser_range']
         new_banana.laser_damage = self.map_config['init_laser_damage']
-        new_banana.time_to_reload = 0
+        new_banana.time_to_reload = 0 if self.map_config['init_laser_count'] == self.map_config['max_laser_count'] else self.map_config['init_reload_time']
         new_banana.reload_time = self.map_config['init_reload_time']
         new_banana.death_score = self.map_config['death_score']
 
@@ -177,7 +177,7 @@ class GameHandler(TurnbasedGameHandler):
 
     # Draw Statuses
     if self.config['show_statuses']:
-      self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: -', self.statuses['mid_x'], self.statuses['title_font_size'], self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
+      self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: 0', self.statuses['mid_x'], self.statuses['title_font_size'], self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
 
       self.canvas.create_text('Score', self.statuses['mid_x'], 2 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
       self.statuses['scores_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 2 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['title_font_size'], center_origin=True)
@@ -230,7 +230,7 @@ class GameHandler(TurnbasedGameHandler):
             x += self.statuses['cell_size']
 
           x = start_x + self.statuses['reload_offset_x']
-          self.statuses['bananas'][side][banana.id]['reload_ref'] = self.canvas.create_text('0', x + self.statuses['font_size'] // 2, y + self.statuses['cell_size'] // 2, self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+          self.statuses['bananas'][side][banana.id]['reload_ref'] = self.canvas.create_text(str(banana.time_to_reload), x + self.statuses['font_size'] // 2, y + self.statuses['cell_size'] // 2, self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
 
     # Draw background
     self.background_ref = self.canvas.create_image('Background', 0, 0)
