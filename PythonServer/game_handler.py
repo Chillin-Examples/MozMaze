@@ -153,7 +153,8 @@ class GameHandler(TurnbasedGameHandler):
         'mid_x': self.canvas.width - (self.config['statuses_width'] // 2),
 
         'cycle': None,
-        'cell_size': 50,
+        'title_font_size': 55 * self.config['statuses_width'] // 1000,
+        'logo_width': self.config['cell_size'] * self.config['statuses_width'] // 1000,
 
         'bananas': {side: {} for side in self.sides}
       }
@@ -161,14 +162,14 @@ class GameHandler(TurnbasedGameHandler):
       self.statuses['mid_x_Chiquita'] = (self.statuses['start_x'] + self.statuses['mid_x']) // 2
       self.statuses['start_x_Dole'] = self.statuses['mid_x']
       self.statuses['mid_x_Dole'] = (self.statuses['mid_x'] + self.statuses['end_x']) // 2
+      self.statuses['cell_size'] = (self.statuses['mid_x'] - self.statuses['start_x'] - 30) // (self.map_config['max_health'] + self.map_config['max_laser_count'] + 3)
       self.statuses['font_size'] = self.statuses['cell_size'] + 5
-      self.statuses['start_y'] = 5 * (self.statuses['font_size'] + 10) + self.config['cell_size'] + 30
-      self.statuses['step_x'] = self.statuses['cell_size']
+      self.statuses['start_y'] = 5 * (self.statuses['font_size'] + 10) + self.statuses['logo_width'] + 10
       self.statuses['step_y'] = self.statuses['cell_size'] + 20
       self.statuses['calc_y'] = lambda id: self.statuses['start_y'] + self.statuses['step_y'] * id
       self.statuses['health_offset_x'] = self.statuses['font_size'] + 5
-      self.statuses['ammo_offset_x'] = self.statuses['health_offset_x'] + self.map_config['max_health'] * self.statuses['step_x'] + 5
-      self.statuses['reload_offset_x'] = self.statuses['mid_x'] - self.statuses['start_x'] - self.statuses['font_size'] - 5
+      self.statuses['ammo_offset_x'] = self.statuses['health_offset_x'] + self.map_config['max_health'] * self.statuses['cell_size'] + 5
+      self.statuses['reload_offset_x'] = self.statuses['ammo_offset_x'] + self.map_config['max_laser_count'] * self.statuses['cell_size'] + 5 + self.statuses['cell_size'] // 2
 
 
   def on_initialize_gui(self):
@@ -176,23 +177,23 @@ class GameHandler(TurnbasedGameHandler):
 
     # Draw Statuses
     if self.config['show_statuses']:
-      self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: -', self.statuses['mid_x'], self.statuses['font_size'], self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+      self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: -', self.statuses['mid_x'], self.statuses['title_font_size'], self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
 
-      self.canvas.create_text('Score', self.statuses['mid_x'], 2 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
-      self.statuses['scores_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 2 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['font_size'], center_origin=True)
-      self.statuses['scores_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 2 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+      self.canvas.create_text('Score', self.statuses['mid_x'], 2 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
+      self.statuses['scores_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 2 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['title_font_size'], center_origin=True)
+      self.statuses['scores_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 2 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
 
-      self.canvas.create_text('Kill', self.statuses['mid_x'], 3 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
-      self.statuses['kills_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 3 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['font_size'], center_origin=True)
-      self.statuses['kills_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 3 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+      self.canvas.create_text('Kill', self.statuses['mid_x'], 3 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
+      self.statuses['kills_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 3 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['title_font_size'], center_origin=True)
+      self.statuses['kills_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 3 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
 
-      self.canvas.create_text('In Box', self.statuses['mid_x'], 4 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
-      self.statuses['enters_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 4 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['font_size'], center_origin=True)
-      self.statuses['enters_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 4 * (self.statuses['font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['font_size'], center_origin=True)
+      self.canvas.create_text('In Box', self.statuses['mid_x'], 4 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
+      self.statuses['enters_Chiquita'] = self.canvas.create_text('0', self.statuses['mid_x_Chiquita'], 4 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(0, 0, 255, 255), self.statuses['title_font_size'], center_origin=True)
+      self.statuses['enters_Dole'] = self.canvas.create_text('0', self.statuses['mid_x_Dole'], 4 * (self.statuses['title_font_size'] + 10), self.canvas.make_rgba(255, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
 
-      self.canvas.create_image('ChiquitaLogo', self.statuses['mid_x_Chiquita'], self.statuses['start_y'] - self.config['cell_size'] // 2 - 15, center_origin=True)
-      self.canvas.create_image('DoleLogo', self.statuses['mid_x_Dole'], self.statuses['start_y'] - self.config['cell_size'] // 2 - 15, center_origin=True)
-      self.canvas.create_line(self.statuses['mid_x'], self.statuses['start_y'] - self.config['cell_size'], self.statuses['mid_x'], self.canvas.height, self.canvas.make_rgba(0, 0, 0, 150), stroke_width=1)
+      self.canvas.create_image('ChiquitaLogo', self.statuses['mid_x_Chiquita'], self.statuses['start_y'] - self.statuses['logo_width'] // 2 - 15, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['logo_width'], center_origin=True)
+      self.canvas.create_image('DoleLogo', self.statuses['mid_x_Dole'], self.statuses['start_y'] - self.statuses['logo_width'] // 2 - 15, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['logo_width'], center_origin=True)
+      self.canvas.create_line(self.statuses['mid_x'], self.statuses['start_y'] - self.statuses['logo_width'], self.statuses['mid_x'], self.canvas.height, self.canvas.make_rgba(0, 0, 0, 150), stroke_width=1)
       for side in self.sides:
         start_x = self.statuses['start_x_' + side]
 
@@ -216,7 +217,7 @@ class GameHandler(TurnbasedGameHandler):
             ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
             self.statuses['bananas'][side][banana.id]['health_ref'].append((ref, ref_type, x, y))
 
-            x += self.statuses['step_x']
+            x += self.statuses['cell_size']
 
           x = start_x + self.statuses['ammo_offset_x']
           for i in range(banana.max_laser_count):
@@ -226,7 +227,7 @@ class GameHandler(TurnbasedGameHandler):
             ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
             self.statuses['bananas'][side][banana.id]['ammo_ref'].append((ref, ref_type, x, y))
 
-            x += self.statuses['step_x']
+            x += self.statuses['cell_size']
 
           x = start_x + self.statuses['reload_offset_x']
           self.statuses['bananas'][side][banana.id]['reload_ref'] = self.canvas.create_text('0', x + self.statuses['font_size'] // 2, y + self.statuses['cell_size'] // 2, self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
