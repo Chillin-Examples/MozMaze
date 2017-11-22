@@ -164,7 +164,7 @@ class GameHandler(TurnbasedGameHandler):
       self.statuses['mid_x_Dole'] = (self.statuses['mid_x'] + self.statuses['end_x']) // 2
       self.statuses['cell_size'] = (self.statuses['mid_x'] - self.statuses['start_x'] - 30) // (self.map_config['max_health'] + self.map_config['max_laser_count'] + 3)
       self.statuses['font_size'] = self.statuses['cell_size'] + 5
-      self.statuses['start_y'] = 5 * (self.statuses['font_size'] + 10) + self.statuses['logo_width'] + 10
+      self.statuses['start_y'] = 5 * (self.statuses['title_font_size'] + 10) + self.statuses['logo_width'] + 10
       self.statuses['step_y'] = self.statuses['cell_size'] + 20
       self.statuses['calc_y'] = lambda id: self.statuses['start_y'] + self.statuses['step_y'] * id
       self.statuses['health_offset_x'] = self.statuses['font_size'] + 5
