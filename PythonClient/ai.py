@@ -16,16 +16,16 @@ class AI(TurnbasedAI):
   def __init__(self, world):
     super(AI, self).__init__(world)
 
-    self.scenario = {
-      'Dole': [
-        Move(id=0, dir=EMoveDir.Right),
-        Move(id=0, dir=EMoveDir.Down)
-      ],
-      'Chiquita': [
-        Move(id=0, dir=EMoveDir.Left),
-        Fire(id=0, dir=EFireDir.Up)
-      ]
-    }
+    # self.scenario = {
+    #   'Dole': [
+    #     Move(id=0, dir=EMoveDir.Right),
+    #     Move(id=0, dir=EMoveDir.Down)
+    #   ],
+    #   'Chiquita': [
+    #     Move(id=0, dir=EMoveDir.Left),
+    #     Fire(id=0, dir=EFireDir.Up)
+    #   ]
+    # }
 
 
   def decide(self):
@@ -39,8 +39,7 @@ class AI(TurnbasedAI):
       if banana.status != EBananaStatus.Alive:
         continue
       # else
-      x = banana.position % self.world.width
-      y = banana.position // self.world.height
+      x, y = self._position_to_xy(banana.position)
       if self.world.board[y][x] == ECell.Box:
         self.send_command(Enter(id=banana.id))
         print('%i %s' % (banana.id, 'Enter'))
@@ -67,5 +66,5 @@ class AI(TurnbasedAI):
 
   def _position_to_xy(self, position):
     x = position % self.world.width
-    y = position // self.world.height
+    y = position // self.world.width
     return (x, y)

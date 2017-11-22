@@ -704,7 +704,7 @@ class Pos(object):
 
   def _position_to_xy(self):
     self.x = self.position % BOARD_WIDTH
-    self.y = self.position // BOARD_HEIGHT
+    self.y = self.position // BOARD_WIDTH
 
 
   def _xy_to_position(self):
