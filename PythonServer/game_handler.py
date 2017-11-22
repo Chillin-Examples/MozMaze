@@ -202,7 +202,8 @@ class GameHandler(TurnbasedGameHandler):
           self.statuses['bananas'][side][banana.id] = {
             'health_ref': [],
             'ammo_ref': [],
-            'reload': ''
+            'reload': '',
+            'removed': False
           }
 
           self.canvas.create_text(str(banana.id), start_x + self.statuses['font_size'] // 2, y + self.statuses['cell_size'] // 2, self.canvas.make_rgba(0, 0, 0, 255), self.statuses['font_size'], center_origin=True)
@@ -370,10 +371,17 @@ class GameHandler(TurnbasedGameHandler):
             if reach_banana:
               break
 
+          # Draw Laser
+          laser_center = {
+            'x': math.floor(((laser_start_pos.x + laser_end_pos.x) / 2) * self.cell_size + self.cell_size / 2),
+            'y': math.floor(((laser_start_pos.y + laser_end_pos.y) / 2) * self.cell_size + self.cell_size / 2)
+          }
           start_offset = self.fire_start_offset[command.dir.name]
-          laser_ref = self.canvas.create_line(laser_start_pos.x * self.cell_size + self.cell_size // 2 + start_offset[0], laser_start_pos.y * self.cell_size + self.cell_size // 2 + start_offset[1],
-                                              laser_end_pos.x * self.cell_size + self.cell_size // 2, laser_end_pos.y * self.cell_size + self.cell_size // 2,
-                                              self.canvas.make_rgba(255, 0, 0, 255), stroke_width=math.ceil(10 * self.scale_factor))
+          laser_length = math.sqrt((((laser_start_pos.x - laser_end_pos.x) * self.cell_size + start_offset[0]) ** 2) + (((laser_start_pos.y - laser_end_pos.y) * self.cell_size + start_offset[1]) ** 2))
+          laser_ref = self.canvas.create_image('Laser', laser_center['x'], laser_center['y'],
+                      center_origin=True, angle=self.fire_angle[command.dir.name])
+          self.canvas.edit_image(laser_ref, scale_type=ScaleType.ScaleX, scale_value=math.floor(laser_length * 100 / self.config['cell_size']))
+          self.canvas.edit_image(laser_ref, scale_type=ScaleType.ScaleY, scale_value=self.cell_size)
           self.delete_next_cycle.append(laser_ref)
           self.lasers_ref.append(laser_ref)
           # Add Fire sprite
@@ -443,12 +451,12 @@ class GameHandler(TurnbasedGameHandler):
           self.num_of_enters[side] += 1
           # update statuses
           if self.config['show_statuses']:
-            self.canvas.create_image('Box', self.statuses['mid_x_' + side], self.statuses['calc_y'](banana.id) + self.statuses['cell_size'] // 2,
+            self.canvas.create_image('Entered', self.statuses['mid_x_' + side], self.statuses['calc_y'](banana.id) + self.statuses['cell_size'] // 2,
                                     scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['step_y'], center_origin=True)
 
     # Check end game
     end_game = False
-    if self.current_cycle >= self.map_config['max_cycles']:
+    if self.current_cycle >= self.map_config['max_cycles'] - 1:
       end_game = True
     else:
       for side in self.sides:
@@ -518,10 +526,10 @@ class GameHandler(TurnbasedGameHandler):
     for side in self.sides:
       for banana in self.world.bananas[side]:
         if banana.status == EBananaStatus.Alive:
+          self._update_banana_ui(banana)
           if banana.img_ref in self.hidden_refs:
             self.canvas.send_to_back(banana.img_ref, self.background_ref)
           else:
-            self._update_banana_ui(banana)
             self.canvas.bring_to_front(banana.img_ref)
             self.canvas.bring_to_front(banana.id_ref, target_ref=banana.img_ref)
             self.canvas.bring_to_front(banana.health_ref, target_ref=banana.img_ref)
@@ -544,29 +552,38 @@ class GameHandler(TurnbasedGameHandler):
         for banana in self.world.bananas[side]:
           status = self.statuses['bananas'][side][banana.id]
 
-          for i in range(banana.max_health):
-            ref, ref_type, x, y = status['health_ref'][i]
-            new_ref_type = ERefType.Full if i < banana.health else ERefType.Empty
-            if ref_type != new_ref_type:
-              self.canvas.delete_element(ref)
-              img_name = 'Health' if new_ref_type == ERefType.Full else 'HealthEmpty'
-              ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-              self.canvas.send_to_back(ref)
-              ref_type = new_ref_type
-            status['health_ref'][i] = (ref, ref_type, x, y)
+          if banana.status != EBananaStatus.Alive:
+            if not status['removed']:
+              for ref, ref_type, x, y in status['health_ref']:
+                self.canvas.delete_element(ref)
+              for ref, ref_type, x, y in status['ammo_ref']:
+                self.canvas.delete_element(ref)
+              self.canvas.delete_element(status['reload_ref'])
+              status['removed'] = True
+          else:
+            for i in range(banana.max_health):
+              ref, ref_type, x, y = status['health_ref'][i]
+              new_ref_type = ERefType.Full if i < banana.health else ERefType.Empty
+              if ref_type != new_ref_type:
+                self.canvas.delete_element(ref)
+                img_name = 'Health' if new_ref_type == ERefType.Full else 'HealthEmpty'
+                ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
+                self.canvas.send_to_back(ref)
+                ref_type = new_ref_type
+              status['health_ref'][i] = (ref, ref_type, x, y)
 
-          for i in range(banana.max_laser_count):
-            ref, ref_type, x, y = status['ammo_ref'][i]
-            new_ref_type = ERefType.Full if i < banana.laser_count else ERefType.Empty
-            if ref_type != new_ref_type:
-              self.canvas.delete_element(ref)
-              img_name = 'Ammo' if new_ref_type == ERefType.Full else 'AmmoEmpty'
-              ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-              self.canvas.send_to_back(ref)
-              ref_type = new_ref_type
-            status['ammo_ref'][i] = (ref, ref_type, x, y)
+            for i in range(banana.max_laser_count):
+              ref, ref_type, x, y = status['ammo_ref'][i]
+              new_ref_type = ERefType.Full if i < banana.laser_count else ERefType.Empty
+              if ref_type != new_ref_type:
+                self.canvas.delete_element(ref)
+                img_name = 'Ammo' if new_ref_type == ERefType.Full else 'AmmoEmpty'
+                ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
+                self.canvas.send_to_back(ref)
+                ref_type = new_ref_type
+              status['ammo_ref'][i] = (ref, ref_type, x, y)
 
-          self.canvas.edit_text(status['reload_ref'], str(banana.curr_reload))
+            self.canvas.edit_text(status['reload_ref'], str(banana.curr_reload))
 
     # Apply actions
     self.canvas.apply_actions()
@@ -644,8 +661,6 @@ class GameHandler(TurnbasedGameHandler):
   def _enter(self, banana):
     banana.status = EBananaStatus.InBox # Update status
     self._remove_banana_ui(banana)
-    if self.config['show_statuses']:
-      pass
 
 
   def _update_score(self, side, score):

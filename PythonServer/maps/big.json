@@ -41,7 +41,7 @@
     ]
   },
 
-  "init_health": 2,
+  "init_health": 1,
   "max_health": 4,
 
   "init_laser_count": 2,

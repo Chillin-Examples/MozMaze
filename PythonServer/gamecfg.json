@@ -49,7 +49,9 @@
       "Health": "images/powerup_heal.png",
       "HealthEmpty": "images/health_empty.png",
       "Ammo": "images/powerup_ammo.png",
-      "AmmoEmpty": "images/ammo_empty.png"
+      "AmmoEmpty": "images/ammo_empty.png",
+
+      "Entered": "images/entered.png"
     }
   },
 
