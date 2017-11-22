@@ -24,7 +24,7 @@
     "save_replay": true,
     "replay_dir": "replays",
     "replay_filename": null,
-    "width": 2000,
+    "width": 1800,
     "height": 1000,
     "images": {
       "Background": "images/background.png",
@@ -75,7 +75,7 @@
     "": "my configs",
     "cell_size": 150,
     "show_statuses": true,
-    "statuses_width": 1000,
+    "statuses_width": 800,
     "map": "maps/big.json"
   }
 }
