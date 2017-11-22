@@ -118,11 +118,11 @@ class Banana(object):
 		return 'Banana'
 
 
-	def __init__(self, id=None, status=None, position=None, health=None, max_health=None, laser_count=None, max_laser_count=None, laser_range=None, laser_damage=None, curr_reload=None, reload_time=None, death_score=None):
-		self.initialize(id, status, position, health, max_health, laser_count, max_laser_count, laser_range, laser_damage, curr_reload, reload_time, death_score)
+	def __init__(self, id=None, status=None, position=None, health=None, max_health=None, laser_count=None, max_laser_count=None, laser_range=None, laser_damage=None, time_to_reload=None, reload_time=None, death_score=None):
+		self.initialize(id, status, position, health, max_health, laser_count, max_laser_count, laser_range, laser_damage, time_to_reload, reload_time, death_score)
 	
 
-	def initialize(self, id=None, status=None, position=None, health=None, max_health=None, laser_count=None, max_laser_count=None, laser_range=None, laser_damage=None, curr_reload=None, reload_time=None, death_score=None):
+	def initialize(self, id=None, status=None, position=None, health=None, max_health=None, laser_count=None, max_laser_count=None, laser_range=None, laser_damage=None, time_to_reload=None, reload_time=None, death_score=None):
 		self.id = id
 		self.status = status
 		self.position = position
@@ -132,7 +132,7 @@ class Banana(object):
 		self.max_laser_count = max_laser_count
 		self.laser_range = laser_range
 		self.laser_damage = laser_damage
-		self.curr_reload = curr_reload
+		self.time_to_reload = time_to_reload
 		self.reload_time = reload_time
 		self.death_score = death_score
 	
@@ -185,10 +185,10 @@ class Banana(object):
 		if self.laser_damage is not None:
 			s += struct.pack('i', self.laser_damage)
 		
-		# serialize self.curr_reload
-		s += b'\x00' if self.curr_reload is None else b'\x01'
-		if self.curr_reload is not None:
-			s += struct.pack('i', self.curr_reload)
+		# serialize self.time_to_reload
+		s += b'\x00' if self.time_to_reload is None else b'\x01'
+		if self.time_to_reload is not None:
+			s += struct.pack('i', self.time_to_reload)
 		
 		# serialize self.reload_time
 		s += b'\x00' if self.reload_time is None else b'\x01'
@@ -286,14 +286,14 @@ class Banana(object):
 		else:
 			self.laser_damage = None
 		
-		# deserialize self.curr_reload
+		# deserialize self.time_to_reload
 		tmp15 = struct.unpack('B', s[offset:offset + 1])[0]
 		offset += 1
 		if tmp15:
-			self.curr_reload = struct.unpack('i', s[offset:offset + 4])[0]
+			self.time_to_reload = struct.unpack('i', s[offset:offset + 4])[0]
 			offset += 4
 		else:
-			self.curr_reload = None
+			self.time_to_reload = None
 		
 		# deserialize self.reload_time
 		tmp16 = struct.unpack('B', s[offset:offset + 1])[0]
