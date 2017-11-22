@@ -44,7 +44,7 @@ laser_count = int
 max_laser_count = int
 laser_range = int
 laser_damage = int
-curr_reload = int
+time_to_reload = int
 reload_time = int
 death_score = int
 

@@ -77,7 +77,7 @@ class GameHandler(TurnbasedGameHandler):
         new_banana.max_laser_count = self.map_config['max_laser_count']
         new_banana.laser_range = self.map_config['init_laser_range']
         new_banana.laser_damage = self.map_config['init_laser_damage']
-        new_banana.curr_reload = 0
+        new_banana.time_to_reload = 0
         new_banana.reload_time = self.map_config['init_reload_time']
         new_banana.death_score = self.map_config['death_score']
 
@@ -289,11 +289,11 @@ class GameHandler(TurnbasedGameHandler):
         if banana.status != EBananaStatus.Alive:
           continue
 
-        if banana.curr_reload > 0:
-          banana.curr_reload -= 1
+        if banana.time_to_reload > 0:
+          banana.time_to_reload -= 1
 
-          if banana.curr_reload == 0:
-            banana.curr_reload = banana.reload_time
+          if banana.time_to_reload == 0:
+            banana.time_to_reload = banana.reload_time
             self._change_ammo(banana, 1)
 
     # Check powerups
@@ -583,7 +583,7 @@ class GameHandler(TurnbasedGameHandler):
                 ref_type = new_ref_type
               status['ammo_ref'][i] = (ref, ref_type, x, y)
 
-            self.canvas.edit_text(status['reload_ref'], str(banana.curr_reload))
+            self.canvas.edit_text(status['reload_ref'], str(banana.time_to_reload))
 
     # Apply actions
     self.canvas.apply_actions()
@@ -633,14 +633,14 @@ class GameHandler(TurnbasedGameHandler):
   def _change_ammo(self, banana, ammo):
     banana.laser_count += ammo
     if ammo < 0:
-      if banana.curr_reload == 0:
-        banana.curr_reload = banana.reload_time
+      if banana.time_to_reload == 0:
+        banana.time_to_reload = banana.reload_time
 
     if banana.laser_count < 0:
       banana.laser_count = 0
     elif banana.laser_count >= banana.max_laser_count:
       banana.laser_count = banana.max_laser_count # fix laser_count > max_laser_count
-      banana.curr_reload = 0 # stop reloading
+      banana.time_to_reload = 0 # stop reloading
 
 
   def _change_health(self, banana, health):
@@ -704,7 +704,7 @@ class Pos(object):
 
   def _position_to_xy(self):
     self.x = self.position % BOARD_WIDTH
-    self.y = self.position // BOARD_HEIGHT
+    self.y = self.position // BOARD_WIDTH
 
 
   def _xy_to_position(self):
