@@ -600,7 +600,7 @@ class GameHandler(TurnbasedGameHandler):
     else:
       x2 = x1 + math.ceil((self.cell_size - 10) * (curr_val / max_val))
 
-    return (x1, y1, x2, y2)
+    return (int(x1), int(y1), int(x2), int(y2))
 
 
   def _get_canvas_position(self, x, y, center_origin=False):
