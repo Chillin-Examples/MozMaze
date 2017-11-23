@@ -39,12 +39,14 @@ FIRE_DIR_LEFTUP = EFireDir.LeftUp
 
 
 
-def initialize(width, height, scores, board, bananas, powerups, enter_score, my_side, other_side):
+def initialize(width, height, my_score, other_score, board, my_bananas, other_bananas,
+               powerups, enter_score, my_side, other_side):
     pass
 
 
-def decide(width, height, scores, board, bananas, powerups, enter_score, my_side, other_side):
-    my_bananas = bananas[my_side]
+def decide(width, height, my_score, other_score, board, my_bananas, other_bananas,
+           powerups, enter_score, my_side, other_side):
+
     for banana in my_bananas:
         if banana.status == BANANA_STATUS_ALIVE:
             row = banana.position // width
