@@ -40,12 +40,12 @@ FIRE_DIR_LEFTUP = EFireDir.LeftUp
 
 
 def initialize(width, height, my_score, other_score, board, my_bananas, other_bananas,
-               powerups, enter_score, my_side, other_side):
+               powerups, enter_score, my_side, other_side, current_cycle, cycle_duration):
     pass
 
 
 def decide(width, height, my_score, other_score, board, my_bananas, other_bananas,
-           powerups, enter_score, my_side, other_side):
+           powerups, enter_score, my_side, other_side, current_cycle, cycle_duration):
 
     for banana in my_bananas:
         if banana.status == BANANA_STATUS_ALIVE:
