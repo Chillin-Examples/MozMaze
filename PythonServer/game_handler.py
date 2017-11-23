@@ -593,14 +593,14 @@ class GameHandler(TurnbasedGameHandler):
   def _get_line_xys(self, banana, curr_val, max_val, offset):
     pos = Pos(position=banana.position)
     canvas_pos = self._get_canvas_position(pos.x, pos.y, center_origin=True)
-    y1 = y2 = canvas_pos['y'] + self.cell_size // 2 - 7.5 + offset
+    y1 = y2 = canvas_pos['y'] + self.cell_size // 2 - 10 + offset
     x1 = canvas_pos['x'] - self.cell_size // 2 + 5
     if curr_val == 0:
       x2 = x1
     else:
       x2 = x1 + math.ceil((self.cell_size - 10) * (curr_val / max_val))
 
-    return (int(x1), int(y1), int(x2), int(y2))
+    return (x1, y1, x2, y2)
 
 
   def _get_canvas_position(self, x, y, center_origin=False):
