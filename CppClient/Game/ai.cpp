@@ -82,7 +82,7 @@ void AI::decide()
 
 int AI::getRandInt(int start, int end)
 {
-    return (random() % (end - start + 1)) + start;
+    return (rand() % (end - start + 1)) + start;
 }
 
 
