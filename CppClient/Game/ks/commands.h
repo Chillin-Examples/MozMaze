@@ -28,25 +28,25 @@ public:
 namespace commands
 {
 
-enum class EMoveDir
+enum EMoveDir
 {
-	Up = 0,
-	Right = 1,
-	Down = 2,
-	Left = 3,
+    MUp = 0,
+    MRight = 1,
+    MDown = 2,
+    MLeft = 3,
 };
 
 
-enum class EFireDir
+enum EFireDir
 {
-	Up = 0,
-	UpRight = 1,
-	Right = 2,
-	RightDown = 3,
-	Down = 4,
-	DownLeft = 5,
-	Left = 6,
-	LeftUp = 7,
+    FUp = 0,
+    FUpRight = 1,
+    FRight = 2,
+    FRightDown = 3,
+    FDown = 4,
+    FDownLeft = 5,
+    FLeft = 6,
+    FLeftUp = 7,
 };
 
 

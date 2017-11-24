@@ -28,7 +28,7 @@ public:
 namespace models
 {
 
-enum class ECell
+enum ECell
 {
 	Empty = 0,
 	Box = 1,
@@ -37,14 +37,14 @@ enum class ECell
 };
 
 
-enum class EPowerUpType
+enum EPowerUpType
 {
 	Ammo = 0,
 	Heal = 1,
 };
 
 
-enum class EBananaStatus
+enum EBananaStatus
 {
 	Alive = 0,
 	InBox = 1,
