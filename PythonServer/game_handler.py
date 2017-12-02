@@ -25,8 +25,12 @@ class GameHandler(TurnbasedGameHandler):
 
   def on_recv_command(self, side_name, agent_name, command_type, command):
     if None in command.__dict__.values():
-        print('None in command: %s(%i) %s' % (side_name, command.id, command_type))
-        return
+      print('None in command: %s(%i) %s' % (side_name, command.id, command_type))
+      return
+
+    if command.id < 0 or command.id >= len(self.world.bananas[side_name]):
+      print('Invalid id in command: %s %i' % (side_name, command.id))
+      return
 
     print('command: %s(%i) %s' % (side_name, command.id, command_type))
     self.commands[side_name][command.id] = command
