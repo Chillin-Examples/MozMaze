@@ -1,46 +1,42 @@
 {
   "board": [
     "ttttttttttttt",
-    "tpeeeeeeeeept",
-    "teeeeeeeeeeet",
-    "teeeeeeeeeeet",
-    "teeeeeeeeeeet",
-    "teeeeteteeeet",
-    "tpeeetbteeept",
-    "teeeeteteeeet",
-    "teeeeeeeeeeet",
-    "teeeeeeeeeeet",
-    "teeeeeeeeeeet",
-    "tpeeeeeeeeept",
+    "tteeteeteeeet",
+    "teeetteteeett",
+    "tteeeeetteeet",
+    "teetttepeetet",
+    "teepeeeeettet",
+    "tteetebeteett",
+    "tetteeeeepeet",
+    "teteepettteet",
+    "teeetteeeeett",
+    "tteeetetteeet",
+    "teeeeteeteett",
     "ttttttttttttt"
   ],
 
   "bananas": {
     "Dole": [
-      { "position": 15 },
-      { "position": 23 },
-      { "position": 28 },
-      { "position": 36 },
-      { "position": 41 },
-      { "position": 49 }
+      { "position": 16 },
+      { "position": 18 },
+      { "position": 118 },
+      { "position": 147 }
     ],
     "Chiquita": [
-      { "position": 119 },
-      { "position": 127 },
-      { "position": 132 },
-      { "position": 140 },
-      { "position": 145 },
-      { "position": 153 }
+      { "position": 21 },
+      { "position": 50 },
+      { "position": 150 },
+      { "position": 152 }
     ]
   },
 
-  "init_health": 2,
+  "init_health": 3,
   "max_health": 4,
 
-  "init_laser_count": 2,
-  "max_laser_count": 2,
+  "init_laser_count": 3,
+  "max_laser_count": 4,
 
-  "init_laser_range": 2,
+  "init_laser_range": 3,
   "init_laser_damage": 1,
   "init_reload_time": 8,
 
@@ -51,6 +47,6 @@
   "powerup_apearance_time": 4,
   "powerup_emit_chance": 0.9,
 
-  "max_cycles": 1000,
+  "max_cycles": 200,
   "friendly_fire": false
 }
