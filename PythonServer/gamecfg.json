@@ -76,6 +76,6 @@
     "cell_size": 150,
     "show_statuses": true,
     "statuses_width": 800,
-    "map": "maps/1.json"
+    "map": "maps/test_small.json"
   }
 }
