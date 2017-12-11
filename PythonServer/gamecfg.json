@@ -28,6 +28,7 @@
     "height": 1000,
     "images": {
       "Background": "images/background.png",
+      "White": "images/white.png",
 
       "Tree": "images/tree.png",
       "Box": "images/box.png",

@@ -179,6 +179,11 @@ class GameHandler(TurnbasedGameHandler):
   def on_initialize_gui(self):
     print('initialize gui')
 
+    # White Background
+    white_ref = self.canvas.create_image('White', 0, 0)
+    self.canvas.edit_image(white_ref, scale_type=ScaleType.ScaleX, scale_value=self.canvas.width)
+    self.canvas.edit_image(white_ref, scale_type=ScaleType.ScaleY, scale_value=self.canvas.height)
+
     # Draw Statuses
     if self.config['show_statuses']:
       self.statuses['cycle_ref'] = self.canvas.create_text('Cycle: 0', self.statuses['mid_x'], self.statuses['title_font_size'], self.canvas.make_rgba(0, 0, 0, 255), self.statuses['title_font_size'], center_origin=True)
@@ -573,7 +578,6 @@ class GameHandler(TurnbasedGameHandler):
                 self.canvas.delete_element(ref)
                 img_name = 'Health' if new_ref_type == ERefType.Full else 'HealthEmpty'
                 ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-                self.canvas.send_to_back(ref)
                 ref_type = new_ref_type
               status['health_ref'][i] = (ref, ref_type, x, y)
 
@@ -584,7 +588,6 @@ class GameHandler(TurnbasedGameHandler):
                 self.canvas.delete_element(ref)
                 img_name = 'Ammo' if new_ref_type == ERefType.Full else 'AmmoEmpty'
                 ref = self.canvas.create_image(img_name, x, y, scale_type=ScaleType.ScaleToWidth, scale_value=self.statuses['cell_size'])
-                self.canvas.send_to_back(ref)
                 ref_type = new_ref_type
               status['ammo_ref'][i] = (ref, ref_type, x, y)
 
