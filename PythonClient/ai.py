@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# python imports
-import random
-
 # chillin imports
 from chillin_client import TurnbasedAI
 
@@ -20,6 +17,7 @@ class AI(TurnbasedAI):
 
     def initialize(self):
         world = self.world
+        print('My side: %s' % (self.my_side,))
         simple_ai.initialize(world.width, world.height, world.scores[self.my_side], world.scores[self.other_side],
                              world.board, world.bananas[self.my_side], world.bananas[self.other_side],
                              world.powerups, world.enter_score, self.my_side, self.other_side,
