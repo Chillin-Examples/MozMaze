@@ -1,82 +1,82 @@
 {
-  "general": {
-    "game_name": "MozMaze",
-    "command_files": [
-      "ks/commands"
-    ],
-    "allowed_teams": {},
-    "offline_mode": true,
-    "": "online configs",
-    "match_id": "0"
-  },
+	"general": {
+		"game_name": "MozMaze",
+		"command_files": [
+			"ks/commands"
+		],
+		"allowed_teams": {},
+		"offline_mode": true,
+		"": "online configs",
+		"match_id": "0"
+	},
 
-  "net": {
-    "host": "0.0.0.0",
-    "port": 5000,
-    "keyfile": "certs/key.pem",
-    "certfile": "certs/cert.pem"
-  },
+	"net": {
+		"host": "0.0.0.0",
+		"port": 5000,
+		"keyfile": "certs/key.pem",
+		"certfile": "certs/cert.pem"
+	},
 
-  "gui": {
-    "host": "0.0.0.0",
-    "port": 5001,
-    "max_spectators": 3,
-    "save_replay": true,
-    "replay_dir": "replays",
-    "replay_filename": null,
-    "width": 1800,
-    "height": 1000,
-    "images": {
-      "Background": "images/background.png",
-      "White": "images/white.png",
+	"gui": {
+		"host": "0.0.0.0",
+		"port": 5001,
+		"max_spectators": 3,
+		"save_replay": true,
+		"replay_dir": "replays",
+		"replay_filename": null,
+		"width": 1800,
+		"height": 1000,
+		"images": {
+			"Background": "images/background.png",
+			"White": "images/white.png",
 
-      "Tree": "images/tree.png",
-      "Box": "images/box.png",
+			"Tree": "images/tree.png",
+			"Box": "images/box.png",
 
-      "ChiquitaLogo": "images/chiquita.png",
-      "DoleLogo": "images/dole.png",
+			"ChiquitaLogo": "images/chiquita.png",
+			"DoleLogo": "images/dole.png",
 
-      "Chiquita": "images/banana_chiquita.png",
-      "ChiquitaFire": "images/banana_chiquita_fire.png",
-      "Dole": "images/banana_dole.png",
-      "DoleFire": "images/banana_dole_fire.png",
-      "Dead": "images/banana_dead.png",
-      "Laser": "images/laser.png",
+			"Chiquita": "images/banana_chiquita.png",
+			"ChiquitaFire": "images/banana_chiquita_fire.png",
+			"Dole": "images/banana_dole.png",
+			"DoleFire": "images/banana_dole_fire.png",
+			"Dead": "images/banana_dead.png",
+			"Laser": "images/laser.png",
 
-      "PowerUpEmitter": "images/powerup_emitter.png",
-      "PowerUpAmmo": "images/powerup_ammo.png",
-      "PowerUpHeal": "images/powerup_heal.png",
+			"PowerUpEmitter": "images/powerup_emitter.png",
+			"PowerUpAmmo": "images/powerup_ammo.png",
+			"PowerUpHeal": "images/powerup_heal.png",
 
-      "Health": "images/powerup_heal.png",
-      "HealthEmpty": "images/health_empty.png",
-      "Ammo": "images/powerup_ammo.png",
-      "AmmoEmpty": "images/ammo_empty.png",
+			"Health": "images/powerup_heal.png",
+			"HealthEmpty": "images/health_empty.png",
+			"Ammo": "images/powerup_ammo.png",
+			"AmmoEmpty": "images/ammo_empty.png",
 
-      "Entered": "images/entered.png"
-    }
-  },
+			"Entered": "images/entered.png"
+		}
+	},
 
-  "sides": {
-    "Dole": ["0"],
-    "Chiquita": ["0"]
-  },
+	"sides": {
+		"Dole": ["0"],
+		"Chiquita": ["0"]
+	},
 
-  "game_handler": {
-    "": "base game handler configs",
-    "start_time": "2017-11-08 00:50",
-    "start_waiting_time": 3,
-    "": "realtime game handler configs",
-    "cycle_duration": 0.5,
-    "max_total_commands": 1000,
-    "max_team_commands": 1000,
-    "max_agent_commands": 1000,
-    "": "turnbased game handler configs",
-    "auto_change_turn": true,
-    "auto_change_turn_sequence": ["Dole", "Chiquita"],
-    "": "my configs",
-    "cell_size": 150,
-    "show_statuses": true,
-    "statuses_width": 800,
-    "map": "maps/test_small.json"
-  }
+	"game_handler": {
+		"": "base game handler configs",
+		"start_time": "2017-11-08 00:50",
+		"start_waiting_time": 3,
+		"": "realtime game handler configs",
+		"cycle_duration": 0.5,
+		"max_total_commands": 1000,
+		"max_team_commands": 1000,
+		"max_agent_commands": 1000,
+		"": "turnbased game handler configs",
+		"auto_change_turn": true,
+		"auto_change_turn_sequence": ["Dole", "Chiquita"],
+		"": "my configs",
+		"cell_size": 150,
+		"show_statuses": true,
+		"statuses_width": 800,
+		"map": "maps/test_small.json"
+	}
 }
