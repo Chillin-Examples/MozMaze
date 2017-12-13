@@ -487,6 +487,14 @@ class GameHandler(TurnbasedGameHandler):
                 'Scores': {
                     'Dole': str(self.world.scores['Dole']),
                     'Chiquita': str(self.world.scores['Chiquita'])
+                },
+                'In Box':  {
+                    'Dole': str(self.num_of_enters['Dole']),
+                    'Chiquita': str(self.num_of_enters['Chiquita'])
+                },
+                'Kill':  {
+                    'Dole': str(self.num_of_kills['Dole']),
+                    'Chiquita': str(self.num_of_kills['Chiquita'])
                 }
             })
 
