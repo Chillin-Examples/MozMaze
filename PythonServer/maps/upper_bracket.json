@@ -1,0 +1,58 @@
+{
+  "board": [
+    "ttttttttttttttttt",
+    "teeeeeppeeeteeeet",
+    "tttttetpteteeeeet",
+    "teeeeepptteeeeppt",
+    "tettttttteeeeepbt",
+    "teeeeeeepeeeeeppt",
+    "teeeeeeeteeeeeeet",
+    "teeeeeeptpeeeeeet",
+    "ttttptttetttptttt",
+    "teeeeeeptpeeeeeet",
+    "teeeeeeeteeeeeeet",
+    "tppeeeeepeeeeeeet",
+    "tbpeeeeetttttttet",
+    "tppeeeettppeeeeet",
+    "teeeeetetptettttt",
+    "teeeeteeeppeeeeet",
+    "ttttttttttttttttt"
+  ],
+
+  "bananas": {
+    "Dole": [
+      { "position": 18 },
+      { "position": 262 },
+      { "position": 55 },
+      { "position": 194 },
+      { "position": 134 }
+    ],
+    "Chiquita": [
+      { "position": 270 },
+      { "position": 26 },
+      { "position": 233 },
+      { "position": 94 },
+      { "position": 154 }
+    ]
+  },
+
+  "init_health": 2,
+  "max_health": 4,
+
+  "init_laser_count": 1,
+  "max_laser_count": 4,
+
+  "init_laser_range": 3,
+  "init_laser_damage": 1,
+  "init_reload_time": 20,
+
+  "death_score": 3,
+  "enter_score": 1,
+
+  "powerup_creation_offset": 20,
+  "powerup_apearance_time": 15,
+  "powerup_emit_chance": 1.0,
+
+  "max_cycles": 300,
+  "friendly_fire": false
+}
